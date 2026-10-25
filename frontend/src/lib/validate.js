@@ -1,15 +1,15 @@
-export function validateLogin({ email, password }) {
+export function validateLogin({ email, password }, t) {
   const errors = {};
-  if (!email.trim()) errors.email = 'Email is required';
-  if (!password) errors.password = 'Password is required';
+  if (!email.trim()) errors.email = t.emailRequired;
+  if (!password) errors.password = t.passwordRequired;
   return errors;
 }
 
-export function validateRegister({ full_name, email, password, role }) {
+export function validateRegister({ full_name, email, password, role }, t) {
   const errors = {};
-  if (!full_name.trim()) errors.full_name = 'Full name is required';
-  if (!email.trim()) errors.email = 'Email is required';
-  if (!password || password.length < 8) errors.password = 'Min. 8 characters';
-  if (!role) errors.role = 'Choose a role';
+  if (!full_name.trim()) errors.full_name = t.nameRequired;
+  if (!email.trim()) errors.email = t.emailRequired;
+  if (!password || password.length < 8) errors.password = t.passwordRequired;
+  if (!role) errors.role = t.roleRequired;
   return errors;
 }

@@ -158,3 +158,174 @@ body {
 }
 
 .auth-footer a:hover { opacity: 0.6; }
+
+/* Lang switcher */
+.lang-switcher {
+  display: flex;
+  gap: 4px;
+}
+
+.lang-btn {
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.lang-btn:hover { color: #111; border-color: #e5e5e3; }
+.lang-btn.active { color: #111; border-color: #111; }
+
+/* на тёмном хедере */
+.search-header .lang-btn { color: rgba(255,255,255,0.4); }
+.search-header .lang-btn:hover { color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.3); }
+.search-header .lang-btn.active { color: #fff; border-color: rgba(255,255,255,0.7); }
+
+/* заголовок карточки (title + switcher в одной строке) */
+.auth-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Search page */
+.search-page {
+  min-height: 100vh;
+  background: #f5f4f0;
+}
+
+.search-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 60px;
+  background: #1a1a1a;
+}
+
+.search-logo {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.5);
+}
+
+.search-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.search-title {
+  font-size: 34px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: -0.5px;
+}
+
+.district-select {
+  height: 54px;
+  padding: 0 20px;
+  border: 1.5px solid #e5e5e3;
+  border-radius: 14px;
+  font-size: 15px;
+  color: #111;
+  background: #fff;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 320px;
+  transition: border-color 0.2s;
+}
+
+.district-select:focus { border-color: #bbb; }
+
+.search-empty {
+  font-size: 15px;
+  color: #aaa;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1.5px solid #e5e5e3;
+  border-radius: 16px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: #bbb;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.card-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: #111;
+}
+
+.card-district {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.card-price {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111;
+  margin-top: 8px;
+}
+
+/* Lang switcher */
+.lang-switcher {
+  display: flex;
+  gap: 4px;
+}
+
+.lang-btn {
+  height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.lang-btn:hover { color: #111; border-color: #e5e5e3; }
+.lang-btn.active { color: #111; border-color: #111; }
+
+.search-header .lang-btn { color: rgba(255,255,255,0.4); }
+.search-header .lang-btn:hover { color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.3); }
+.search-header .lang-btn.active { color: #fff; border-color: rgba(255,255,255,0.7); }
+
+.auth-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
