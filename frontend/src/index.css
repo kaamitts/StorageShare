@@ -329,3 +329,73 @@ body {
   align-items: center;
   justify-content: space-between;
 }
+
+/* Detail page */
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.2s;
+  align-self: flex-start;
+}
+
+.back-btn:hover { color: #111; }
+
+.detail-card {
+  background: #fff;
+  border: 1.5px solid #e5e5e3;
+  border-radius: 20px;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 600px;
+}
+
+.detail-name {
+  font-size: 28px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: -0.5px;
+}
+
+.detail-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0ee;
+  gap: 24px;
+}
+
+.detail-row:last-child { border-bottom: none; }
+
+.detail-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.detail-value {
+  font-size: 15px;
+  color: #111;
+  text-align: right;
+}
+
+.detail-price {
+  font-weight: 600;
+}

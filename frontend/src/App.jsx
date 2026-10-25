@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SearchPage from './pages/SearchPage';
 import PartnerPage from './pages/PartnerPage';
+import StorageDetailPage from './pages/StorageDetailPage';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/storage/:id" element={<StorageDetailPage />} />
           <Route path="/partner" element={<PartnerPage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

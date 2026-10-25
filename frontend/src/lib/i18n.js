@@ -1,13 +1,11 @@
 export const translations = {
   kk: {
-    // SearchPage
     findStorage: 'Қойым орнын табу',
     allDistricts: 'Барлық аудандар',
     loading: 'Жүктелуде...',
     noPoints: 'Бұл ауданда қойым орны жоқ.',
     perBagPerDay: '/ сөмке / күн',
 
-    // LoginPage
     logIn: 'Кіру',
     email: 'Электрондық пошта',
     password: 'Құпия сөз',
@@ -20,7 +18,6 @@ export const translations = {
     wrongCredentials: 'Электрондық пошта немесе құпия сөз қате.',
     wrongCredentialsField: 'Электрондық пошта немесе құпия сөз қате',
 
-    // RegisterPage
     createAccount: 'Тіркелгі жасау',
     fullName: 'Толық аты-жөні',
     fullNamePlaceholder: 'Иван Петров',
@@ -37,6 +34,15 @@ export const translations = {
     emailRequired: 'Электрондық поштаны енгізіңіз',
     passwordRequired: 'Кемінде 8 таңба',
     roleRequired: 'Рөлді таңдаңыз',
+
+    backToList: '← Тізімге оралу',
+    notFound: 'Қойым орны табылмады.',
+    area: 'Аудан',
+    areaUnit: 'м²',
+    price: 'Бағасы',
+    hours: 'Жұмыс уақыты',
+    contact: 'Байланыс',
+    district: 'Аудан',
   },
   ru: {
     findStorage: 'Найти хранилище',
@@ -73,6 +79,15 @@ export const translations = {
     emailRequired: 'Введите email',
     passwordRequired: 'Мин. 8 символов',
     roleRequired: 'Выберите роль',
+
+    backToList: '← Вернуться к списку',
+    notFound: 'Точка хранения не найдена.',
+    area: 'Площадь',
+    areaUnit: 'м²',
+    price: 'Цена',
+    hours: 'Часы работы',
+    contact: 'Контакт',
+    district: 'Район',
   },
   en: {
     findStorage: 'Find storage',
@@ -109,6 +124,15 @@ export const translations = {
     emailRequired: 'Email is required',
     passwordRequired: 'Min. 8 characters',
     roleRequired: 'Choose a role',
+
+    backToList: '← Back to list',
+    notFound: 'Storage point not found.',
+    area: 'Area',
+    areaUnit: 'm²',
+    price: 'Price',
+    hours: 'Working hours',
+    contact: 'Contact',
+    district: 'District',
   },
 };
 

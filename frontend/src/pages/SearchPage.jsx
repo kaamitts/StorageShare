@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getDistricts, getStoragePoints } from '../api/storage';
 import { useLang } from '../lib/LangContext';
 import LangSwitcher from '../components/LangSwitcher';
 
 export default function SearchPage() {
   const { lang, t } = useLang();
+  const navigate = useNavigate();
   const [districts, setDistricts] = useState([]);
   const [districtIndex, setDistrictIndex] = useState('');
   const [points, setPoints] = useState([]);
@@ -49,7 +51,7 @@ export default function SearchPage() {
         ) : (
           <div className="cards-grid">
             {points.map(p => (
-              <div key={p.id} className="card">
+              <div key={p.id} className="card" onClick={() => navigate(`/storage/${p.id}`)}>
                 <div className="card-name">{p.name}</div>
                 <div className="card-district">{p.district[lang]}</div>
                 <div className="card-price">{p.price_per_bag_per_day} ₸ {t.perBagPerDay}</div>
