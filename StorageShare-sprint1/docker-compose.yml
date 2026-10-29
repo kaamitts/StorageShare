@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: storageshare
+      POSTGRES_USER: storageshare
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-storageshare-local}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storageshare -d storageshare"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  backend:
+    build: ./backend
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-local-demo-only-replace-before-deployment-2026}
+      DEBUG: "1"
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      DATABASE_URL: postgres://storageshare:${POSTGRES_PASSWORD:-storageshare-local}@db:5432/storageshare
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-1}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  pgdata:
