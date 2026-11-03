@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # local
     "accounts",
     "storage",
+    "bookings.apps.BookingsConfig",
 ]
 
 MIDDLEWARE = [
