@@ -105,6 +105,15 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 
+# Link encoded in a booking's QR code. The partner scans it (US-09); {token} is
+# the booking's random qr_token, never its sequential id.
+BOOKING_QR_URL_TEMPLATE = env(
+    "BOOKING_QR_URL_TEMPLATE",
+    default="http://localhost:5173/partner/check-in/{token}",
+)
+if "{token}" not in BOOKING_QR_URL_TEMPLATE:
+    raise ValueError("BOOKING_QR_URL_TEMPLATE must contain {token}")
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Almaty"
 USE_I18N = True

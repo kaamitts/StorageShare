@@ -2,12 +2,13 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bookings.serializers import BookingSerializer
+from bookings.models import Booking, BookingStatus
+from bookings.serializers import BookingHistorySerializer, BookingSerializer
 from bookings.services import confirm_booking_payment
 
 
 class IsTraveler(permissions.BasePermission):
-    message = "Only travelers can create bookings."
+    message = "Only travelers can use bookings."
 
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.is_traveler
@@ -19,6 +20,21 @@ class BookingCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(traveler=self.request.user)
+
+
+class BookingHistoryView(generics.ListAPIView):
+    """The traveler's own bookings, without the ones still awaiting payment."""
+
+    serializer_class = BookingHistorySerializer
+    permission_classes = [permissions.IsAuthenticated, IsTraveler]
+
+    def get_queryset(self):
+        return (
+            Booking.objects.filter(traveler=self.request.user)
+            .exclude(status=BookingStatus.AWAITING_PAYMENT)
+            .select_related("storage_point")
+            .order_by("-drop_off_at", "-id")
+        )
 
 
 class BookingPayView(APIView):

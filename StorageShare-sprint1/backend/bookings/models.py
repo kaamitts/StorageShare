@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -9,6 +11,11 @@ class BookingStatus(models.TextChoices):
     CHECKED_IN = "checked_in", "Checked in"
     COMPLETED = "completed", "Completed"
     CANCELLED = "cancelled", "Cancelled"
+
+
+def generate_qr_token() -> str:
+    """Unpredictable token for the QR link (256 random bits, URL-safe)."""
+    return secrets.token_urlsafe(32)
 
 
 class Booking(models.Model):
@@ -41,6 +48,15 @@ class Booking(models.Model):
         max_length=20,
         choices=BookingStatus.choices,
         default=BookingStatus.AWAITING_PAYMENT,
+    )
+
+    # Set once when the booking is created and never changed, so the QR code
+    # of a booking stays the same. It is shown only while the booking is active.
+    qr_token = models.CharField(
+        max_length=64,
+        unique=True,
+        editable=False,
+        default=generate_qr_token,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
