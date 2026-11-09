@@ -1,4 +1,4 @@
-"""Price, opening hours and capacity rules for creating a booking."""
+"""Booking rules: price, opening hours, capacity and mock payment."""
 
 from datetime import datetime, time, timedelta, timezone as datetime_timezone
 from decimal import Decimal, ROUND_HALF_UP, localcontext
@@ -7,11 +7,20 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework import status
+from rest_framework.exceptions import (
+    APIException, NotFound, PermissionDenied, ValidationError,
+)
 
 from accounts.models import User
 from bookings.models import Booking, BookingStatus
 from storage.models import StoragePoint
+
+
+class BookingConflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "The booking cannot change to this status."
+    default_code = "booking_conflict"
 
 
 CAPACITY_STATUSES = (
@@ -154,4 +163,42 @@ def create_booking(
         bags_count=bags_count,
         total_price=total_price,
         status=BookingStatus.AWAITING_PAYMENT,
+    )
+
+
+# Statuses that a successful payment has already reached or passed.
+PAID_STATUSES = (
+    BookingStatus.CONFIRMED,
+    BookingStatus.CHECKED_IN,
+    BookingStatus.COMPLETED,
+)
+
+
+@transaction.atomic
+def confirm_booking_payment(*, user: User, booking_id: int) -> tuple[Booking, bool]:
+    """Mock payment: move the owner's booking from awaiting payment to confirmed.
+
+    Returns the booking and whether this call changed its status. Repeated
+    calls are safe: a booking that is already paid is returned unchanged, so a
+    later status such as checked in is never reset. The total price is never
+    recalculated.
+    """
+    # Lock the row so two simultaneous payments perform only one transition.
+    # Filtering by owner makes another user's booking look like it does not exist.
+    booking = (
+        Booking.objects.select_for_update()
+        .filter(pk=booking_id, traveler_id=user.pk)
+        .first()
+    )
+    if booking is None:
+        raise NotFound("Booking not found.")
+
+    if booking.status == BookingStatus.AWAITING_PAYMENT:
+        booking.status = BookingStatus.CONFIRMED
+        booking.save(update_fields=["status", "updated_at"])
+        return booking, True
+    if booking.status in PAID_STATUSES:
+        return booking, False
+    raise BookingConflict(
+        f"A booking with status '{booking.status}' cannot be paid."
     )
