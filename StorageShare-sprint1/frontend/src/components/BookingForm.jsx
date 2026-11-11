@@ -6,6 +6,7 @@ import { useLang } from '../lib/lang-context';
 import Field from './Field';
 import Button from './Button';
 import ErrorBanner from './ErrorBanner';
+import PaymentPanel from './PaymentPanel';
 
 function estimateTotal(pricePerHour, bags, dropOffAt, pickUpAt) {
   const hours = (new Date(pickUpAt) - new Date(dropOffAt)) / 3600000;
@@ -27,7 +28,6 @@ export default function BookingForm({ point }) {
   const [banner, setBanner] = useState('');
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState(null);
-
   function message(value) {
     if (!value) return undefined;
     if (typeof value === 'object') return `${t.notEnoughCapacity} ${value.capacity}`;
@@ -64,23 +64,9 @@ export default function BookingForm({ point }) {
   }
 
   if (booking) {
-    return <div className="booking-card">
-      <h2 className="booking-title">{t.bookingCreated}</h2>
-      <div className="detail-rows">
-        {[[t.bookingNumber, `#${booking.id}`],
-          [t.bags, booking.bags_count],
-          [t.total, `${booking.total_price} ₸`],
-          [t.statusLabel, t.awaitingPayment]].map(([label, value]) =>
-          <div className="detail-row" key={label}>
-            <span className="detail-label">{label}</span>
-            <span className="detail-value">{value}</span>
-          </div>)}
-      </div>
-      <p className="booking-hint">{t.payNextStep}</p>
-      <button className="btn-secondary" type="button" onClick={() => {
-        setBooking(null); setDropOffAt(''); setPickUpAt(''); setBagsCount('1');
-      }}>{t.bookAnother}</button>
-    </div>;
+    return <PaymentPanel booking={booking} point={point} onBookAnother={() => {
+      setBooking(null); setDropOffAt(''); setPickUpAt(''); setBagsCount('1');
+    }} />;
   }
 
   return <div className="booking-card">

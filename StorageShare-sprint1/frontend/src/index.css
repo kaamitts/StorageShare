@@ -457,3 +457,12 @@ button, select, a { touch-action: manipulation; }
 .btn-secondary:hover { border-color: #bbb; }
 
 @media (max-width: 650px) { .booking-card { padding: 24px; } }
+
+.booking-demo {
+  font-size: 13px;
+  color: #8a6d3b;
+  background: #fdf8ee;
+  border: 1px solid #f0e2c4;
+  border-radius: 12px;
+  padding: 12px 16px;
+}

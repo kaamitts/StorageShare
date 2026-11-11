@@ -12,3 +12,10 @@ export function createBooking({ storagePointId, dropOffAt, pickUpAt, bagsCount }
     },
   });
 }
+
+export function payBooking(bookingId, signal) {
+  return api(`/bookings/${encodeURIComponent(bookingId)}/pay/`, {
+    method: 'POST',
+    signal,
+  });
+}
