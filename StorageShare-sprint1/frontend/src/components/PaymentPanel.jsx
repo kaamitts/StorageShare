@@ -1,17 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { payBooking } from '../api/bookings';
 import { useLang } from '../lib/lang-context';
+import { formatMoment } from '../lib/datetime';
 import Button from './Button';
 import ErrorBanner from './ErrorBanner';
-
-const LOCALES = { kk: 'kk-KZ', ru: 'ru-RU', en: 'en-GB' };
-
-function formatMoment(value, lang) {
-  return new Date(value).toLocaleString(LOCALES[lang] || 'en-GB', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
 
 export default function PaymentPanel({ booking, point, onBookAnother }) {
   const { lang, t } = useLang();
@@ -53,6 +46,7 @@ export default function PaymentPanel({ booking, point, onBookAnother }) {
     {paid
       ? <>
           <p className="booking-hint">{t.paymentDoneHint}</p>
+          <Link className="btn-secondary" to="/history">{t.goToHistory}</Link>
           <button className="btn-secondary" type="button" onClick={onBookAnother}>
             {t.bookAnother}
           </button>

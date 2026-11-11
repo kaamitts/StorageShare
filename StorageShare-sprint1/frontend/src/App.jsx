@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import SearchPage from './pages/SearchPage';
 import PartnerPage from './pages/PartnerPage';
 import StorageDetailPage from './pages/StorageDetailPage';
+import HistoryPage from './pages/HistoryPage';
 export default function App() {
   return <LangProvider><BrowserRouter><Routes>
     <Route path="/login" element={<LoginPage />} />
@@ -13,6 +14,7 @@ export default function App() {
     <Route element={<ProtectedRoute />}>
       <Route path="/search" element={<SearchPage />} />
       <Route path="/storage/:id" element={<StorageDetailPage />} />
+      <Route path="/history" element={<HistoryPage />} />
     </Route>
     <Route element={<ProtectedRoute role="partner" />}>
       <Route path="/partner" element={<PartnerPage />} />
