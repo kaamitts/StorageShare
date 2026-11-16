@@ -59,6 +59,10 @@ class Booking(models.Model):
         default=generate_qr_token,
     )
 
+    # Set by the partner's QR scan (US-09).
+    checked_in_at = models.DateTimeField(null=True, blank=True)
+    checked_out_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

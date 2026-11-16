@@ -1,20 +1,23 @@
-"""US-02: list storage points, filtered by district."""
+"""US-02: list storage points, filtered by district. US-07: partners add points."""
 
 from rest_framework import generics, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import IsPartner
 from storage.models import District, StoragePoint
 from storage.serializers import (
     DistrictSerializer,
     StoragePointCardSerializer,
+    StoragePointCreateSerializer,
     StoragePointDetailSerializer,
 )
 
 
-class StoragePointListView(generics.ListAPIView):
-    """GET /api/storage-points/?district=medeu
+class StoragePointListView(generics.ListCreateAPIView):
+    """GET /api/storage-points/?district=medeu — any logged-in user.
+    POST /api/storage-points/ — partners only (US-07).
 
     Without the parameter the whole active list is returned; with it, only the
     points of that district. An unknown district is rejected with 400 rather
@@ -25,6 +28,19 @@ class StoragePointListView(generics.ListAPIView):
     serializer_class = StoragePointCardSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [permissions.IsAuthenticated(), IsPartner()]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return StoragePointCreateSerializer
+        return StoragePointCardSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(partner=self.request.user)
 
     def get_queryset(self):
         queryset = StoragePoint.objects.active().select_related("partner")

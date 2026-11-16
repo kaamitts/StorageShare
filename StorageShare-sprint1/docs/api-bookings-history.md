@@ -61,27 +61,13 @@ Returns the current traveler's own bookings, newest drop-off first.
 - It is unique in the database and is not related to the sequential booking id.
 - The API shows it only while the booking is `confirmed` or `checked_in`.
 
-## QR link format (agreement for US-09)
+## QR link format (used by US-09)
 
 ```
-<BOOKING_QR_URL_TEMPLATE with {token} replaced>
-default: http://localhost:5173/partner/check-in/{token}
+<FRONTEND_BASE_URL>/partner/check-in/<qr_token>
+default: http://localhost:5173/partner/check-in/<qr_token>
 ```
 
-The template is set by the `BOOKING_QR_URL_TEMPLATE` environment variable and
-must contain `{token}`. In production it points at the real frontend domain.
-
-Proposed US-09 partner flow:
-
-1. The partner, logged in, scans the QR. The phone opens
-   `/partner/check-in/<token>` in the frontend.
-2. The frontend takes `<token>` from the path and calls the partner API
-   (to be built in US-09), for example `POST /api/partner/check-in/` with
-   `{"token": "<token>"}`.
-3. The backend finds the booking by `qr_token`, checks that it belongs to one of
-   this partner's storage points, then moves `confirmed → checked_in` (drop-off)
-   or `checked_in → completed` (pick-up).
-
-The token alone does not grant anything: the partner must be authenticated and
-own the storage point. A `completed` booking no longer gets a QR in the history,
-and US-09 should reject its token.
+`FRONTEND_BASE_URL` is an environment variable. In production it points at the
+real frontend domain; for a phone on the same Wi-Fi it uses the computer's LAN IP.
+The partner flow that opens this link is described in [api-partner.md](api-partner.md).

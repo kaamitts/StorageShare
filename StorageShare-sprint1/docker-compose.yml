@@ -17,7 +17,10 @@ services:
     environment:
       SECRET_KEY: ${SECRET_KEY:-local-demo-only-replace-before-deployment-2026}
       DEBUG: "1"
-      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      # For a phone on the same Wi-Fi: add the computer's LAN IP to ALLOWED_HOSTS,
+      # use it in FRONTEND_BASE_URL and set FRONTEND_BIND=0.0.0.0 (docs/api-partner.md).
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:8080}
       DATABASE_URL: postgres://storageshare:${POSTGRES_PASSWORD:-storageshare-local}@db:5432/storageshare
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-1}
     ports:
@@ -34,7 +37,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "127.0.0.1:8080:80"
+      - "${FRONTEND_BIND:-127.0.0.1}:8080:80"
     depends_on:
       backend:
         condition: service_healthy

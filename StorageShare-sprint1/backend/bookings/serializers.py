@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from bookings.models import Booking
+from bookings.models import Booking, BookingStatus
 from bookings.qr import has_active_qr, qr_svg_data_uri, qr_url
 from bookings.services import create_booking, validate_booking_times
 from storage.models import StoragePoint
@@ -64,3 +64,45 @@ class BookingHistorySerializer(serializers.ModelSerializer):
             "url": url,
             "image": qr_svg_data_uri(url),
         }
+
+
+class PartnerBookingSerializer(serializers.ModelSerializer):
+    """One booking in the partner's list (US-08)."""
+
+    storage_point_id = serializers.IntegerField(read_only=True)
+    storage_point_name = serializers.CharField(source="storage_point.name", read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = (
+            "id", "storage_point_id", "storage_point_name", "drop_off_at",
+            "pick_up_at", "bags_count", "status", "checked_in_at", "checked_out_at",
+        )
+        read_only_fields = fields
+
+
+class PartnerCheckInSerializer(serializers.ModelSerializer):
+    """The partner's check-in page opened from the QR link (US-09)."""
+
+    storage_point = BookingStoragePointSerializer(read_only=True)
+    traveler_name = serializers.SerializerMethodField()
+    can_check_in = serializers.SerializerMethodField()
+    can_check_out = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Booking
+        fields = (
+            "id", "storage_point", "traveler_name", "drop_off_at", "pick_up_at",
+            "bags_count", "total_price", "status", "checked_in_at",
+            "checked_out_at", "can_check_in", "can_check_out",
+        )
+        read_only_fields = fields
+
+    def get_traveler_name(self, booking):
+        return booking.traveler.full_name or booking.traveler.email
+
+    def get_can_check_in(self, booking):
+        return booking.status == BookingStatus.CONFIRMED
+
+    def get_can_check_out(self, booking):
+        return booking.status == BookingStatus.CHECKED_IN

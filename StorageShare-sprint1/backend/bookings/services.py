@@ -202,3 +202,61 @@ def confirm_booking_payment(*, user: User, booking_id: int) -> tuple[Booking, bo
     raise BookingConflict(
         f"A booking with status '{booking.status}' cannot be paid."
     )
+
+
+# US-09: partner check-in and check-out by the QR token.
+
+def get_booking_for_partner(*, partner: User, token: str, lock: bool = False) -> Booking:
+    """The booking behind a QR token, if it belongs to one of this partner's points.
+
+    Unknown token -> 404. A booking of another partner's point -> 403.
+    """
+    queryset = Booking.objects.select_related("storage_point", "traveler")
+    if lock:
+        # Lock only the booking row; select_related would also lock the joined rows.
+        queryset = queryset.select_for_update(of=("self",))
+    booking = queryset.filter(qr_token=token).first()
+    if booking is None:
+        raise NotFound("No booking found for this QR code.")
+    if booking.storage_point.partner_id != partner.pk:
+        raise PermissionDenied("This booking belongs to another partner's storage point.")
+    return booking
+
+
+CHECK_IN_ERRORS = {
+    BookingStatus.AWAITING_PAYMENT: "This booking has not been paid yet.",
+    BookingStatus.CHECKED_IN: "The bags are already checked in.",
+    BookingStatus.COMPLETED: "This booking is already completed.",
+    BookingStatus.CANCELLED: "This booking was cancelled.",
+}
+
+CHECK_OUT_ERRORS = {
+    BookingStatus.AWAITING_PAYMENT: "This booking has not been paid yet.",
+    BookingStatus.CONFIRMED: "The bags must be checked in before check-out.",
+    BookingStatus.COMPLETED: "The bags are already checked out.",
+    BookingStatus.CANCELLED: "This booking was cancelled.",
+}
+
+
+@transaction.atomic
+def check_in_booking(*, partner: User, token: str) -> Booking:
+    """confirmed -> checked_in, saving the time. Two scans at once change it once."""
+    booking = get_booking_for_partner(partner=partner, token=token, lock=True)
+    if booking.status != BookingStatus.CONFIRMED:
+        raise BookingConflict(CHECK_IN_ERRORS[booking.status])
+    booking.status = BookingStatus.CHECKED_IN
+    booking.checked_in_at = timezone.now()
+    booking.save(update_fields=["status", "checked_in_at", "updated_at"])
+    return booking
+
+
+@transaction.atomic
+def check_out_booking(*, partner: User, token: str) -> Booking:
+    """checked_in -> completed, saving the time. After this the QR is no longer shown."""
+    booking = get_booking_for_partner(partner=partner, token=token, lock=True)
+    if booking.status != BookingStatus.CHECKED_IN:
+        raise BookingConflict(CHECK_OUT_ERRORS[booking.status])
+    booking.status = BookingStatus.COMPLETED
+    booking.checked_out_at = timezone.now()
+    booking.save(update_fields=["status", "checked_out_at", "updated_at"])
+    return booking

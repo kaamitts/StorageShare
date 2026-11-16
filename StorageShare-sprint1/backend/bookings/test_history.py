@@ -13,7 +13,8 @@ from rest_framework.test import APITestCase
 from bookings.models import Booking, BookingStatus
 from storage.models import District, StoragePoint
 
-QR_TEMPLATE = "https://storageshare.test/partner/check-in/{token}"
+QR_BASE = "https://storageshare.test"
+QR_TEMPLATE = QR_BASE + "/partner/check-in/{token}"
 
 
 def make_booking(traveler, point, status=BookingStatus.CONFIRMED, days=2):
@@ -26,7 +27,7 @@ def make_booking(traveler, point, status=BookingStatus.CONFIRMED, days=2):
     )
 
 
-@override_settings(BOOKING_QR_URL_TEMPLATE=QR_TEMPLATE)
+@override_settings(FRONTEND_BASE_URL=QR_BASE)
 class BookingHistoryAPITests(APITestCase):
     url = reverse("bookings:booking-history")
 

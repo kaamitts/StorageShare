@@ -13,8 +13,12 @@ def has_active_qr(booking: Booking) -> bool:
     return booking.status in QR_ACTIVE_STATUSES
 
 
+# The frontend route the partner's phone opens. Agreed for US-09.
+QR_PATH = "/partner/check-in/{token}"
+
+
 def qr_url(booking: Booking) -> str:
-    return settings.BOOKING_QR_URL_TEMPLATE.format(token=booking.qr_token)
+    return settings.FRONTEND_BASE_URL + QR_PATH.format(token=booking.qr_token)
 
 
 def qr_svg_data_uri(url: str) -> str:
