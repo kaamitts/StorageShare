@@ -8,6 +8,7 @@ import { districtName } from '../lib/districts';
 import Field from './Field';
 import Button from './Button';
 import ErrorBanner from './ErrorBanner';
+import Dropdown from './Dropdown';
 
 const EMPTY = {
   name: '', address: '', district: '', price_per_bag_per_hour: '',
@@ -36,7 +37,7 @@ export default function StoragePointForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (loading) return; 
+    if (loading) return;
     const errs = validateStoragePoint(form);
     if (Object.keys(errs).length) { setErrors(errs); setBanner('checkFields'); setCreated(null); return; }
     setErrors({}); setBanner(''); setCreated(null); setLoading(true);
@@ -70,14 +71,11 @@ export default function StoragePointForm() {
         <Field label={t.address} value={form.address}
           onChange={set('address')} error={message(errors.address)} />
         <div className="field">
-          <label htmlFor="sp-district">{t.district}</label>
-          <select id="sp-district" className={errors.district ? 'error' : ''}
-            value={form.district} onChange={e => set('district')(e.target.value)}
-            aria-invalid={Boolean(errors.district)}>
-            <option value="">{t.chooseDistrict}</option>
-            {districts.map(d =>
-              <option key={d.code} value={d.code}>{districtName(d.code, lang, d.name)}</option>)}
-          </select>
+          <label>{t.district}</label>
+          <Dropdown wide ariaLabel={t.district} value={form.district}
+            onChange={set('district')} placeholder={t.chooseDistrict}
+            error={Boolean(errors.district)}
+            options={districts.map(d => ({ value: d.code, label: districtName(d.code, lang, d.name) }))} />
           {errors.district && <span className="err-msg">{message(errors.district)}</span>}
         </div>
         <Field label={t.pricePerBagHour} type="number" value={form.price_per_bag_per_hour}

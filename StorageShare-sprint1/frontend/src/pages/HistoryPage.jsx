@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getBookingHistory } from '../api/bookings';
 import { useLang } from '../lib/lang-context';
 import { formatMoment } from '../lib/datetime';
@@ -28,7 +29,8 @@ export default function HistoryPage() {
   function retry() { setResult({ loading: true }); setAttempt(a => a + 1); }
 
   return <div className="search-page"><Header /><main className="search-main">
-    <h1 className="search-title">{t.history}</h1>
+  <Link className="back-btn" to="/search">{t.backToList}</Link>
+  <h1 className="search-title">{t.history}</h1>
     {result.loading ? <p>{t.loading}</p>
       : result.error ? <div role="alert">{t.requestError}
           <button onClick={retry}>{t.retry}</button></div>

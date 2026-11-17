@@ -16,7 +16,13 @@ export function validateRegister({ full_name, email, password, role }, t) {
   return errors;
 }
 
-export function validateBooking({ dropOffAt, pickUpAt, bagsCount }) {
+function withinHours(value, opensAt, closesAt) {
+  if (!opensAt || !closesAt) return true;
+  const moment = String(value).slice(11, 16);
+  return moment >= String(opensAt).slice(0, 5) && moment <= String(closesAt).slice(0, 5);
+}
+
+export function validateBooking({ dropOffAt, pickUpAt, bagsCount, opensAt, closesAt }) {
   const errors = {};
   const drop = dropOffAt ? new Date(dropOffAt) : null;
   const pick = pickUpAt ? new Date(pickUpAt) : null;
@@ -25,9 +31,11 @@ export function validateBooking({ dropOffAt, pickUpAt, bagsCount }) {
 
   if (!dropValid) errors.drop_off_at = 'dropOffRequired';
   else if (drop <= new Date()) errors.drop_off_at = 'dropOffInFuture';
+  else if (!withinHours(dropOffAt, opensAt, closesAt)) errors.drop_off_at = 'outsideHours';
 
   if (!pickValid) errors.pick_up_at = 'pickUpRequired';
   else if (dropValid && pick <= drop) errors.pick_up_at = 'pickUpAfterDropOff';
+  else if (!withinHours(pickUpAt, opensAt, closesAt)) errors.pick_up_at = 'outsideHours';
 
   const bags = Number(bagsCount);
   if (!Number.isInteger(bags) || bags < 1 || bags > 32767) errors.bags_count = 'bagsInvalid';

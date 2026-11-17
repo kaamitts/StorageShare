@@ -7,6 +7,7 @@ import Field from './Field';
 import Button from './Button';
 import ErrorBanner from './ErrorBanner';
 import PaymentPanel from './PaymentPanel';
+import DateTimeField from './DateTimeField';
 
 function estimateTotal(pricePerHour, bags, dropOffAt, pickUpAt) {
   const hours = (new Date(pickUpAt) - new Date(dropOffAt)) / 3600000;
@@ -19,19 +20,54 @@ function capacityLeft(message) {
   return match ? Number(match[1]) : null;
 }
 
+function minutesOf(value) {
+  const [hours, minutes] = String(value).split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function timeSlots(opensAt, closesAt, step = 30) {
+  const start = minutesOf(opensAt);
+  const end = minutesOf(closesAt);
+  const slots = [];
+  for (let point = start; point <= end; point += step) {
+    const hours = String(Math.floor(point / 60)).padStart(2, '0');
+    const minutes = String(point % 60).padStart(2, '0');
+    slots.push(`${hours}:${minutes}`);
+  }
+  return slots;
+}
+
 export default function BookingForm({ point }) {
   const { t } = useLang();
-  const [dropOffAt, setDropOffAt] = useState('');
-  const [pickUpAt, setPickUpAt] = useState('');
+  const [dropOffDate, setDropOffDate] = useState('');
+  const [dropOffTime, setDropOffTime] = useState('');
+  const [pickUpDate, setPickUpDate] = useState('');
+  const [pickUpTime, setPickUpTime] = useState('');
   const [bagsCount, setBagsCount] = useState('1');
   const [errors, setErrors] = useState({});
   const [banner, setBanner] = useState('');
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState(null);
+
+  const today = new Date().toLocaleDateString('en-CA');
+  const slots = timeSlots(point.opens_at, point.closes_at);
+  const dropOffAt = dropOffDate && dropOffTime ? `${dropOffDate}T${dropOffTime}` : '';
+  const pickUpAt = pickUpDate && pickUpTime ? `${pickUpDate}T${pickUpTime}` : '';
+
   function message(value) {
     if (!value) return undefined;
     if (typeof value === 'object') return `${t.notEnoughCapacity} ${value.capacity}`;
     return t[value] || value;
+  }
+
+  function chooseDropOffDate(value) {
+    setDropOffDate(value);
+    if (!pickUpDate) setPickUpDate(value);
+  }
+
+  function reset() {
+    setBooking(null); setDropOffDate(''); setDropOffTime('');
+    setPickUpDate(''); setPickUpTime(''); setBagsCount('1');
   }
 
   const estimate = estimateTotal(
@@ -40,8 +76,11 @@ export default function BookingForm({ point }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (loading) return; 
-    const errs = validateBooking({ dropOffAt, pickUpAt, bagsCount });
+    if (loading) return;
+    const errs = validateBooking({
+      dropOffAt, pickUpAt, bagsCount,
+      opensAt: point.opens_at, closesAt: point.closes_at,
+    });
     if (Object.keys(errs).length) { setErrors(errs); setBanner('checkFields'); return; }
     setErrors({}); setBanner(''); setLoading(true);
     try {
@@ -64,9 +103,7 @@ export default function BookingForm({ point }) {
   }
 
   if (booking) {
-    return <PaymentPanel booking={booking} point={point} onBookAnother={() => {
-      setBooking(null); setDropOffAt(''); setPickUpAt(''); setBagsCount('1');
-    }} />;
+    return <PaymentPanel booking={booking} point={point} onBookAnother={reset} />;
   }
 
   return <div className="booking-card">
@@ -74,11 +111,15 @@ export default function BookingForm({ point }) {
     <ErrorBanner message={message(banner)} />
     <form onSubmit={handleSubmit} noValidate>
       <div className="form-fields">
-        <Field label={t.dropOff} type="datetime-local" value={dropOffAt}
-          onChange={setDropOffAt} error={message(errors.drop_off_at)} />
-        <Field label={t.pickUp} type="datetime-local" value={pickUpAt}
-          onChange={setPickUpAt} error={message(errors.pick_up_at)} />
-        <Field label={t.bags} type="number" value={bagsCount}
+        <DateTimeField label={t.dropOff} date={dropOffDate} time={dropOffTime}
+          onDate={chooseDropOffDate} onTime={setDropOffTime} min={today}
+          slots={slots} error={message(errors.drop_off_at)}
+          dateAria={`${t.dropOff} — ${t.dateLabel}`} timeAria={`${t.dropOff} — ${t.timeLabel}`} />
+        <DateTimeField label={t.pickUp} date={pickUpDate} time={pickUpTime}
+          onDate={setPickUpDate} onTime={setPickUpTime} min={dropOffDate || today}
+          slots={slots} error={message(errors.pick_up_at)}
+          dateAria={`${t.pickUp} — ${t.dateLabel}`} timeAria={`${t.pickUp} — ${t.timeLabel}`} />
+        <Field label={t.bags} type="number" value={bagsCount} min="1"
           onChange={setBagsCount} error={message(errors.bags_count)} />
       </div>
       {estimate && <div className="booking-total">
