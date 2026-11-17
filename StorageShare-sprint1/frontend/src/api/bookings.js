@@ -23,3 +23,7 @@ export function payBooking(bookingId, signal) {
 export function getBookingHistory(signal) {
   return api('/bookings/history/', { signal });
 }
+
+export function getPartnerBookings(signal) {
+  return api('/partner/bookings/', { signal });
+}

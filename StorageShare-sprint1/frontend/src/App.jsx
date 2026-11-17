@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SearchPage from './pages/SearchPage';
 import PartnerPage from './pages/PartnerPage';
+import PartnerBookingsPage from './pages/PartnerBookingsPage';
 import StorageDetailPage from './pages/StorageDetailPage';
 import HistoryPage from './pages/HistoryPage';
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
     </Route>
     <Route element={<ProtectedRoute role="partner" />}>
       <Route path="/partner" element={<PartnerPage />} />
+      <Route path="/partner/bookings" element={<PartnerBookingsPage />} />
     </Route>
     <Route path="*" element={<Navigate to="/search" replace />} />
   </Routes></BrowserRouter></LangProvider>;

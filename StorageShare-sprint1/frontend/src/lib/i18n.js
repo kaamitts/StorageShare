@@ -102,6 +102,11 @@ export const translations = {
     opensRequired: 'Ашылу уақытын таңдаңыз',
     closesRequired: 'Жабылу уақытын таңдаңыз',
     closesAfterOpens: 'Жабылу уақыты ашылудан кеш болуы керек',
+    partnerBookings: 'Брондар',
+    noPartnerBookings: 'Әзірге брон жоқ.',
+    backToPartner: '← Серіктес кабинетіне',
+    checkedInAt: 'Нақты тапсыру',
+    checkedOutAt: 'Нақты алу',
   },
   ru: {
     address: 'Адрес', security: 'Безопасность', logout: 'Выйти', retry: 'Повторить', requestError: 'Не удалось выполнить запрос. Проверьте соединение и повторите.', checkFields: 'Проверьте отмеченные поля.', partnerDashboard: 'Кабинет партнёра', partnerPlaceholder: 'Вы вошли как партнёр. Управление точками будет добавлено в следующем спринте.', invalidEmail: 'Введите корректный email.',
@@ -206,6 +211,11 @@ export const translations = {
     opensRequired: 'Укажите время открытия',
     closesRequired: 'Укажите время закрытия',
     closesAfterOpens: 'Закрытие должно быть позже открытия',
+    partnerBookings: 'Брони',
+    noPartnerBookings: 'Броней пока нет.',
+    backToPartner: '← В кабинет партнёра',
+    checkedInAt: 'Фактическая сдача',
+    checkedOutAt: 'Фактическое получение',
   },
   en: {
     address: 'Address', security: 'Security', logout: 'Log out', retry: 'Retry', requestError: 'Request failed. Check your connection and try again.', checkFields: 'Check the highlighted fields.', partnerDashboard: 'Partner dashboard', partnerPlaceholder: 'You are signed in as a partner. Storage management will be added in a later sprint.', invalidEmail: 'Enter a valid email.',
@@ -310,6 +320,11 @@ export const translations = {
     opensRequired: 'Choose the opening time',
     closesRequired: 'Choose the closing time',
     closesAfterOpens: 'Closing must be later than opening',
+    partnerBookings: 'Bookings',
+    noPartnerBookings: 'No bookings yet.',
+    backToPartner: '← Back to partner dashboard',
+    checkedInAt: 'Checked in at',
+    checkedOutAt: 'Checked out at',
   },
 };
 
