@@ -491,3 +491,31 @@ button, select, a { touch-action: manipulation; }
   height: 180px;
   background: #fff;
 }
+.field select {
+  height: 54px;
+  padding: 0 16px;
+  border: 1.5px solid #e5e5e3;
+  border-radius: 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #111;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field select:focus { border-color: #bbb; box-shadow: 0 0 0 4px rgba(0,0,0,0.04); }
+
+.field select.error { border-color: #e05555; }
+
+.banner-ok {
+  padding: 16px 20px;
+  background: #f2f9f3;
+  border: 1.5px solid #cfe6d4;
+  border-radius: 14px;
+  font-size: 13.5px;
+  color: #2b6b3a;
+  line-height: 1.5;
+}
+
+.banner-ok a { color: #2b6b3a; }

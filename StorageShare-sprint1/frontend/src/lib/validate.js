@@ -34,3 +34,24 @@ export function validateBooking({ dropOffAt, pickUpAt, bagsCount }) {
 
   return errors;
 }
+
+export function validateStoragePoint(form) {
+  const errors = {};
+  if (!form.name.trim()) errors.name = 'pointNameRequired';
+  if (!form.address.trim()) errors.address = 'addressRequired';
+  if (!form.district) errors.district = 'districtRequired';
+
+  const price = Number(form.price_per_bag_per_hour);
+  if (form.price_per_bag_per_hour === '' || !Number.isFinite(price) || price < 0) {
+    errors.price_per_bag_per_hour = 'priceInvalid';
+  }
+
+  const capacity = Number(form.capacity_bags);
+  if (!Number.isInteger(capacity) || capacity < 1) errors.capacity_bags = 'capacityInvalid';
+
+  if (!form.opens_at) errors.opens_at = 'opensRequired';
+  if (!form.closes_at) errors.closes_at = 'closesRequired';
+  else if (form.opens_at && form.closes_at <= form.opens_at) errors.closes_at = 'closesAfterOpens';
+
+  return errors;
+}
