@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { formErrors } from '../lib/errors';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../api/auth';
 import { validateLogin } from '../lib/validate';
 import { useLang } from '../lib/lang-context';
@@ -12,6 +12,8 @@ import LangSwitcher from '../components/LangSwitcher';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from;
   const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +28,7 @@ export default function LoginPage() {
     setErrors({}); setBanner(''); setLoading(true);
     try {
       const { user } = await login({ email: email.trim(), password });
-      navigate(user.role === 'traveler' ? '/search' : '/partner');
+      navigate(from || (user.role === 'traveler' ? '/search' : '/partner'), { replace: true });
     } catch (err) {
       setPassword('');
       setErrors(formErrors(err));

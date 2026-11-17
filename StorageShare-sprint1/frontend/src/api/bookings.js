@@ -27,3 +27,14 @@ export function getBookingHistory(signal) {
 export function getPartnerBookings(signal) {
   return api('/partner/bookings/', { signal });
 }
+export function getBookingByToken(token, signal) {
+  return api(`/bookings/by-token/${encodeURIComponent(token)}/`, { signal });
+}
+
+export function checkInBooking(token, signal) {
+  return api(`/bookings/by-token/${encodeURIComponent(token)}/check-in/`, { method: 'POST', signal });
+}
+
+export function checkOutBooking(token, signal) {
+  return api(`/bookings/by-token/${encodeURIComponent(token)}/check-out/`, { method: 'POST', signal });
+}
