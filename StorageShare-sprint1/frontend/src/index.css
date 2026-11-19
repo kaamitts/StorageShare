@@ -616,6 +616,80 @@ button, select, a { touch-action: manipulation; }
   height: 180px;
   background: #fff;
 }
+
+.traveler-history-list { gap: 14px; }
+
+.history-booking-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  max-width: none;
+  padding: 24px 28px;
+}
+
+.history-booking-card.has-qr {
+  grid-template-columns: minmax(0, 1fr) 168px;
+}
+
+.history-booking-main { min-width: 0; }
+.history-booking-main .booking-title {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.history-booking-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+}
+
+.history-booking-details .detail-row {
+  min-width: 0;
+  padding: 9px 0;
+  gap: 14px;
+}
+
+.history-booking-details .detail-label { font-size: 11px; }
+.history-booking-details .detail-value {
+  min-width: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.history-booking-qr {
+  width: 100%;
+  padding: 0;
+  border: 0;
+}
+
+.history-booking-qr .qr-image {
+  width: 148px;
+  height: 148px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.history-booking-qr .booking-hint { text-align: center; }
+
+@media (max-width: 760px) {
+  .history-booking-card,
+  .history-booking-card.has-qr { grid-template-columns: minmax(0, 1fr); }
+  .history-booking-card { padding: 20px; }
+  .history-booking-details { grid-template-columns: minmax(0, 1fr); }
+  .history-booking-details .detail-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 0;
+  }
+  .history-booking-details .detail-value { text-align: left; }
+  .history-booking-qr {
+    padding-top: 16px;
+    border-top: 1px solid #f0f0ee;
+  }
+  .history-booking-qr .qr-image { width: 132px; height: 132px; }
+}
+
 .field select {
   height: 58px;
   padding: 0 16px;
