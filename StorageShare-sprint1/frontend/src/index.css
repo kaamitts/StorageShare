@@ -530,6 +530,78 @@ button, select, a { touch-action: manipulation; }
   gap: 24px;
 }
 
+.my-points-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.my-points-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 220px;
+  padding: 0 24px;
+  text-decoration: none;
+}
+
+.partner-points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 20px;
+}
+
+.partner-point-card {
+  min-width: 0;
+  padding: 28px;
+  background: #fff;
+  border: 1.5px solid #e5e5e3;
+  border-radius: 20px;
+}
+
+.partner-point-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.point-status {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.point-status.active { color: #27623a; background: #edf7ef; }
+.point-status.inactive { color: #686862; background: #f0f0ee; }
+
+.partner-point-details { margin-top: 16px; }
+.partner-point-details > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f0ee;
+}
+.partner-point-details > div:last-child { border-bottom: 0; }
+.partner-point-details dt { color: #8a8a85; font-size: 13px; font-weight: 600; }
+.partner-point-details dd { text-align: right; overflow-wrap: anywhere; }
+.my-points-error, .my-points-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.my-points-retry, .my-points-empty-add { width: auto; min-width: 180px; }
+
+@media (max-width: 650px) {
+  .my-points-heading { align-items: stretch; flex-direction: column; }
+  .my-points-add { width: 100%; }
+  .partner-point-card { padding: 22px; }
+  .partner-point-card-heading { flex-direction: column; }
+  .partner-point-details > div { flex-direction: column; gap: 6px; }
+  .partner-point-details dd { text-align: left; }
+}
+
 .qr-block {
   display: flex;
   flex-direction: column;

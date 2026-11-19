@@ -11,6 +11,7 @@ from storage.hours import storage_point_is_open
 from storage.models import District, StoragePoint
 from storage.serializers import (
     DistrictSerializer,
+    PartnerStoragePointSerializer,
     StoragePointCardSerializer,
     StoragePointCreateSerializer,
     StoragePointDetailSerializer,
@@ -78,6 +79,17 @@ class StoragePointListView(generics.ListCreateAPIView):
             now = timezone.now()
             return [point for point in queryset if storage_point_is_open(point, now)]
         return queryset
+
+
+class PartnerStoragePointListView(generics.ListAPIView):
+    """List all active and inactive points belonging to the logged-in partner."""
+
+    serializer_class = PartnerStoragePointSerializer
+    permission_classes = [permissions.IsAuthenticated, IsPartner]
+    pagination_class = None
+
+    def get_queryset(self):
+        return StoragePoint.objects.filter(partner=self.request.user)
 
 
 class StoragePointDetailView(generics.RetrieveAPIView):

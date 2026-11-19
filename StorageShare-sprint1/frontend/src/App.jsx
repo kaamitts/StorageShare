@@ -9,6 +9,7 @@ import PartnerBookingsPage from './pages/PartnerBookingsPage';
 import CheckInPage from './pages/CheckInPage';
 import StorageDetailPage from './pages/StorageDetailPage';
 import HistoryPage from './pages/HistoryPage';
+import MyStoragePointsPage from './pages/MyStoragePointsPage';
 export default function App() {
   return <LangProvider><BrowserRouter><Routes>
     <Route path="/login" element={<LoginPage />} />
@@ -20,6 +21,7 @@ export default function App() {
     </Route>
     <Route element={<ProtectedRoute role="partner" />}>
       <Route path="/partner" element={<PartnerPage />} />
+      <Route path="/partner/storage-points" element={<MyStoragePointsPage />} />
       <Route path="/partner/bookings" element={<PartnerBookingsPage />} />
       <Route path="/partner/check-in/:token" element={<CheckInPage />} />
       <Route path="/checkin/:token" element={<CheckInPage />} />

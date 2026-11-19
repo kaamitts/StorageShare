@@ -49,6 +49,24 @@ class StoragePointDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class PartnerStoragePointSerializer(serializers.ModelSerializer):
+    """Fields shown to a partner for their own active and inactive points."""
+
+    district = serializers.CharField(source="get_district_display", read_only=True)
+    district_code = serializers.CharField(source="district", read_only=True)
+    opens_at = serializers.TimeField(format="%H:%M", read_only=True)
+    closes_at = serializers.TimeField(format="%H:%M", read_only=True)
+
+    class Meta:
+        model = StoragePoint
+        fields = (
+            "id", "name", "address", "district", "district_code",
+            "price_per_bag_per_hour", "capacity_bags", "opens_at", "closes_at",
+            "is_24_hours", "is_active",
+        )
+        read_only_fields = fields
+
+
 class DistrictSerializer(serializers.Serializer):
     """The fixed district list, so the frontend filter is not hard-coded."""
 

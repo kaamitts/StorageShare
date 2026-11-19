@@ -1,7 +1,7 @@
 # Partner API — Sprint 3 (US-07, US-08, US-09)
 
 Base URL in development: `http://localhost:8000/api/`
-All endpoints require `Authorization: Bearer <access>` of a **partner**
+Partner-only endpoints require `Authorization: Bearer <access>` of a **partner**
 (`role = "partner"`). A traveler gets `403`, no token gets `401`.
 
 ---
@@ -60,8 +60,22 @@ The point immediately appears in `GET /api/storage-points/?district=medeu`.
 | closing time not later than opening | `{"closes_at": ["Closing time must be later than opening time."]}` |
 | empty name / address | `{"name": [...], "address": [...]}` |
 
-Note: points created through this form must close later than they open on the
-same day. Overnight and 24-hour points (allowed in seed data) are not created here.
+The form and endpoint support ordinary, overnight, and 24-hour schedules.
+For 24-hour points the stored opening and closing times are both `00:00`; use
+`is_24_hours` to distinguish them from an ordinary schedule.
+
+---
+
+## Partner storage points · GET /api/partner/storage-points/
+
+Returns every storage point owned by the logged-in partner, including inactive
+points. Results are scoped to the authenticated user and ordered by point name.
+The response includes `district` and `district_code`, address, opening and
+closing times, `is_24_hours`, and `is_active`. Times use `HH:MM`; a 24/7 point
+still includes its stored time values, while `is_24_hours` determines display.
+
+The endpoint requires a partner access token. Requests without a valid token
+return `401`; authenticated users without the partner role receive `403`.
 
 ---
 

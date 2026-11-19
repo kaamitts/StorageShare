@@ -15,3 +15,7 @@ export function getStoragePointById(id, signal) {
 export function createStoragePoint(point, signal) {
   return api('/storage-points/', { method: 'POST', signal, body: point });
 }
+
+export function getMyStoragePoints(signal) {
+  return api('/partner/storage-points/', { signal });
+}
