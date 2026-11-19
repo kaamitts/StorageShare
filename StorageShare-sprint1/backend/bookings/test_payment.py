@@ -14,6 +14,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient, APITestCase
 
 from bookings.models import Booking, BookingStatus
+from bookings.services import expire_pending_bookings
 from storage.models import District, StoragePoint
 
 
@@ -68,6 +69,27 @@ class BookingPaymentAPITests(APITestCase):
         self.assertEqual(response.data["total_price"], "1200.00")
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, BookingStatus.CONFIRMED)
+
+    def test_expired_booking_cannot_be_paid_and_is_marked_expired(self):
+        self.booking.payment_expires_at = timezone.now() - timedelta(microseconds=1)
+        self.booking.save(update_fields=["payment_expires_at"])
+
+        response = self.pay()
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.data["code"], "booking_payment_expired")
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, BookingStatus.EXPIRED)
+
+    def test_payment_at_expiry_boundary_is_rejected(self):
+        self.booking.payment_expires_at = timezone.now()
+        self.booking.save(update_fields=["payment_expires_at"])
+
+        response = self.pay()
+
+        self.assertEqual(response.status_code, 409)
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, BookingStatus.EXPIRED)
 
     def test_total_price_is_not_recalculated(self):
         # A stored total that differs from the current tariff must stay as it is.
@@ -146,6 +168,15 @@ class BookingPaymentAPITests(APITestCase):
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, BookingStatus.CANCELLED)
 
+    def test_repeated_payment_of_expired_booking_stays_expired(self):
+        self.booking.payment_expires_at = timezone.now() - timedelta(seconds=1)
+        self.booking.save(update_fields=["payment_expires_at"])
+
+        for _ in range(2):
+            self.assertEqual(self.pay().status_code, 409)
+            self.booking.refresh_from_db()
+            self.assertEqual(self.booking.status, BookingStatus.EXPIRED)
+
     def test_confirming_one_booking_leaves_others_unchanged(self):
         second = make_booking(self.owner, self.point)
         response = self.pay()
@@ -185,3 +216,33 @@ class BookingPaymentConcurrencyTests(TransactionTestCase):
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, BookingStatus.CONFIRMED)
         self.assertEqual(self.booking.total_price, Decimal("1200.00"))
+
+    def test_expiry_racing_with_payment_leaves_booking_expired(self):
+        self.booking.payment_expires_at = timezone.now() - timedelta(seconds=1)
+        self.booking.save(update_fields=["payment_expires_at"])
+        barrier = Barrier(2)
+
+        def expire():
+            try:
+                barrier.wait(timeout=10)
+                return expire_pending_bookings()
+            finally:
+                connections.close_all()
+
+        def pay():
+            try:
+                client = APIClient()
+                client.force_authenticate(self.owner)
+                barrier.wait(timeout=10)
+                return client.post(pay_url(self.booking.pk), format="json").status_code
+            finally:
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            expiry_future = pool.submit(expire)
+            payment_future = pool.submit(pay)
+            expiry_future.result(timeout=20)
+            self.assertEqual(payment_future.result(timeout=20), 409)
+
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, BookingStatus.EXPIRED)

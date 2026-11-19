@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import (
@@ -13,7 +14,11 @@ from rest_framework.exceptions import (
 )
 
 from accounts.models import User
-from bookings.models import Booking, BookingStatus
+from bookings.models import (
+    PAYMENT_RESERVATION_DURATION,
+    Booking,
+    BookingStatus,
+)
 from storage.hours import is_open_at
 from storage.models import StoragePoint
 
@@ -24,11 +29,35 @@ class BookingConflict(APIException):
     default_code = "booking_conflict"
 
 
+class BookingPaymentExpired(BookingConflict):
+    default_detail = "The 15-minute payment window has expired."
+    default_code = "booking_payment_expired"
+
+
 CAPACITY_STATUSES = (
-    BookingStatus.AWAITING_PAYMENT,
     BookingStatus.CONFIRMED,
     BookingStatus.CHECKED_IN,
 )
+
+
+def payment_deadline_passed(expires_at, *, now=None) -> bool:
+    """The single boundary rule used by payment and the expiry sweeper."""
+    return expires_at <= (now or timezone.now())
+
+
+def expired_payment_filter(*, now=None) -> Q:
+    """ORM equivalent of payment_deadline_passed for set-based queries."""
+    return Q(payment_expires_at__lte=now or timezone.now())
+
+
+def expire_pending_bookings(*, now=None) -> int:
+    """Mark all unpaid reservations whose 15-minute window has elapsed."""
+    now = now or timezone.now()
+    return Booking.objects.filter(
+        status=BookingStatus.AWAITING_PAYMENT,
+    ).filter(
+        expired_payment_filter(now=now),
+    ).update(status=BookingStatus.EXPIRED, updated_at=now)
 
 
 def validate_booking_times(drop_off_at: datetime, pick_up_at: datetime) -> None:
@@ -87,9 +116,16 @@ def available_capacity(
     point: StoragePoint, drop_off_at: datetime, pick_up_at: datetime
 ) -> int:
     """Call while holding the storage point's row lock."""
+    now = timezone.now()
     overlaps = Booking.objects.filter(
         storage_point=point,
-        status__in=CAPACITY_STATUSES,
+    ).filter(
+        Q(status__in=CAPACITY_STATUSES)
+        | (
+            Q(status=BookingStatus.AWAITING_PAYMENT)
+            & ~expired_payment_filter(now=now)
+        ),
+    ).filter(
         drop_off_at__lt=pick_up_at,
         pick_up_at__gt=drop_off_at,
     ).values_list("drop_off_at", "pick_up_at", "bags_count")
@@ -145,7 +181,7 @@ def create_booking(
     total_price = calculate_total_price(
         point.price_per_bag_per_hour, bags_count, drop_off_at, pick_up_at,
     )
-    return Booking.objects.create(
+    booking = Booking.objects.create(
         traveler=traveler,
         storage_point=point,
         drop_off_at=drop_off_at,
@@ -154,6 +190,12 @@ def create_booking(
         total_price=total_price,
         status=BookingStatus.AWAITING_PAYMENT,
     )
+    # Use the persisted creation timestamp as the exact start of the reservation.
+    booking.payment_expires_at = booking.created_at + PAYMENT_RESERVATION_DURATION
+    Booking.objects.filter(pk=booking.pk).update(
+        payment_expires_at=booking.payment_expires_at,
+    )
+    return booking
 
 
 # Statuses that a successful payment has already reached or passed.
@@ -164,7 +206,6 @@ PAID_STATUSES = (
 )
 
 
-@transaction.atomic
 def confirm_booking_payment(*, user: User, booking_id: int) -> tuple[Booking, bool]:
     """Mock payment: move the owner's booking from awaiting payment to confirmed.
 
@@ -175,23 +216,40 @@ def confirm_booking_payment(*, user: User, booking_id: int) -> tuple[Booking, bo
     """
     # Lock the row so two simultaneous payments perform only one transition.
     # Filtering by owner makes another user's booking look like it does not exist.
-    booking = (
-        Booking.objects.select_for_update()
-        .filter(pk=booking_id, traveler_id=user.pk)
-        .first()
-    )
-    if booking is None:
-        raise NotFound("Booking not found.")
+    expired = False
+    with transaction.atomic():
+        # Locking serializes payment with the expiry worker and other pay calls.
+        booking = (
+            Booking.objects.select_for_update()
+            .filter(pk=booking_id, traveler_id=user.pk)
+            .first()
+        )
+        if booking is None:
+            raise NotFound("Booking not found.")
 
-    if booking.status == BookingStatus.AWAITING_PAYMENT:
-        booking.status = BookingStatus.CONFIRMED
-        booking.save(update_fields=["status", "updated_at"])
-        return booking, True
-    if booking.status in PAID_STATUSES:
-        return booking, False
-    raise BookingConflict(
-        f"A booking with status '{booking.status}' cannot be paid."
-    )
+        if booking.status == BookingStatus.AWAITING_PAYMENT:
+            now = timezone.now()
+            if payment_deadline_passed(booking.payment_expires_at, now=now):
+                booking.status = BookingStatus.EXPIRED
+                booking.save(update_fields=["status", "updated_at"])
+                expired = True
+            else:
+                booking.status = BookingStatus.CONFIRMED
+                booking.save(update_fields=["status", "updated_at"])
+                return booking, True
+        elif booking.status in PAID_STATUSES:
+            return booking, False
+        elif booking.status == BookingStatus.EXPIRED:
+            raise BookingPaymentExpired()
+        else:
+            raise BookingConflict(
+                f"A booking with status '{booking.status}' cannot be paid."
+            )
+
+    # Raise only after the transaction commits so the expired status persists.
+    if expired:
+        raise BookingPaymentExpired()
+    raise AssertionError("Unexpected booking payment state.")
 
 
 # US-09: partner check-in and check-out by the QR token.
@@ -215,6 +273,7 @@ def get_booking_for_partner(*, partner: User, token: str, lock: bool = False) ->
 
 CHECK_IN_ERRORS = {
     BookingStatus.AWAITING_PAYMENT: "This booking has not been paid yet.",
+    BookingStatus.EXPIRED: "The payment period for this booking has expired.",
     BookingStatus.CHECKED_IN: "The bags are already checked in.",
     BookingStatus.COMPLETED: "This booking is already completed.",
     BookingStatus.CANCELLED: "This booking was cancelled.",
@@ -222,6 +281,7 @@ CHECK_IN_ERRORS = {
 
 CHECK_OUT_ERRORS = {
     BookingStatus.AWAITING_PAYMENT: "This booking has not been paid yet.",
+    BookingStatus.EXPIRED: "The payment period for this booking has expired.",
     BookingStatus.CONFIRMED: "The bags must be checked in before check-out.",
     BookingStatus.COMPLETED: "The bags are already checked out.",
     BookingStatus.CANCELLED: "This booking was cancelled.",

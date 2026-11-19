@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getMyStoragePoints } from '../api/storage';
+import { deleteMyStoragePoint, getMyStoragePoints } from '../api/storage';
 import Header from '../components/Header';
 import { districtName } from '../lib/districts';
 import { useLang } from '../lib/lang-context';
@@ -9,6 +9,8 @@ export default function MyStoragePointsPage() {
   const { lang, t } = useLang();
   const [result, setResult] = useState({ loading: true });
   const [attempt, setAttempt] = useState(0);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -25,6 +27,22 @@ export default function MyStoragePointsPage() {
     setAttempt(value => value + 1);
   }
 
+  async function removePoint(point) {
+    if (!window.confirm(t.confirmDeletePoint)) return;
+    setDeletingId(point.id);
+    setDeleteError('');
+    try {
+      await deleteMyStoragePoint(point.id);
+      setResult(current => ({
+        points: current.points.filter(item => item.id !== point.id),
+      }));
+    } catch (error) {
+      setDeleteError(error.status === 409 ? t.pointHasBookings : t.requestError);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return <div className="search-page">
     <Header />
     <main className="search-main">
@@ -33,6 +51,7 @@ export default function MyStoragePointsPage() {
         <h1 className="search-title">{t.myStoragePoints}</h1>
         <Link className="btn-primary my-points-add" to="/partner">{t.addPoint}</Link>
       </div>
+      {deleteError && <p className="point-delete-error" role="alert">{deleteError}</p>}
 
       {result.loading ? <p>{t.loading}</p>
         : result.error ? <div className="my-points-error" role="alert">
@@ -59,6 +78,13 @@ export default function MyStoragePointsPage() {
                   ? t.open24Hours : `${point.opens_at} – ${point.closes_at}`}
               </dd></div>
             </dl>
+            <div className="partner-point-actions">
+              <button type="button" className="point-delete-button"
+                disabled={deletingId !== null} aria-busy={deletingId === point.id}
+                onClick={() => removePoint(point)}>
+                {deletingId === point.id ? t.deletingPoint : t.deletePoint}
+              </button>
+            </div>
           </article>)}
         </div>}
     </main>

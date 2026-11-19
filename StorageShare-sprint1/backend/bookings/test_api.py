@@ -72,6 +72,11 @@ class BookingAPITests(APITestCase):
         self.assertEqual(response.data["status"], "awaiting_payment")
         self.assertEqual(response.data["traveler"], self.traveler.pk)
         self.assertEqual(Booking.objects.get().total_price, Decimal("1200.00"))
+        booking = Booking.objects.get()
+        self.assertEqual(
+            booking.payment_expires_at,
+            booking.created_at + timedelta(minutes=15),
+        )
 
     def test_partial_hour_is_billed_by_actual_duration(self):
         response = self.client.post(self.url, self.payload(
@@ -179,6 +184,15 @@ class BookingAPITests(APITestCase):
                 previous = self.existing(status=value, bags_count=5)
                 self.assert_rejected(self.payload(bags_count=1), "bags_count")
                 previous.delete()
+
+    def test_expired_payment_reservation_does_not_reduce_capacity(self):
+        self.existing(payment_expires_at=timezone.now() - timedelta(seconds=1))
+        response = self.client.post(self.url, self.payload(bags_count=5), format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+
+    def test_unexpired_payment_reservation_still_reduces_capacity(self):
+        self.existing(payment_expires_at=timezone.now() + timedelta(minutes=1))
+        self.assert_rejected(self.payload(bags_count=3), "bags_count")
 
     def test_cancelled_and_completed_bookings_do_not_reserve_capacity(self):
         self.existing(status=BookingStatus.CANCELLED, bags_count=5)

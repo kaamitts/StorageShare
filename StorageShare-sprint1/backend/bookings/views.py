@@ -11,6 +11,7 @@ from bookings.serializers import (
     PartnerCheckInSerializer,
 )
 from bookings.services import (
+    BookingPaymentExpired,
     check_in_booking,
     check_out_booking,
     confirm_booking_payment,
@@ -47,7 +48,13 @@ class BookingPayView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        booking, _changed = confirm_booking_payment(user=request.user, booking_id=pk)
+        try:
+            booking, _changed = confirm_booking_payment(user=request.user, booking_id=pk)
+        except BookingPaymentExpired as error:
+            return Response(
+                {"detail": str(error.detail), "code": "booking_payment_expired"},
+                status=status.HTTP_409_CONFLICT,
+            )
         return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
 
 
@@ -61,7 +68,7 @@ class PartnerBookingListView(generics.ListAPIView):
     def get_queryset(self):
         return (
             Booking.objects.filter(storage_point__partner=self.request.user)
-            .exclude(status=BookingStatus.AWAITING_PAYMENT)
+            .exclude(status__in=(BookingStatus.AWAITING_PAYMENT, BookingStatus.EXPIRED))
             .select_related("storage_point")
             .order_by("drop_off_at", "id")
         )

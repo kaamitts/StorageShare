@@ -1,12 +1,14 @@
 """Access and ownership tests for the partner's storage point list."""
 
-from datetime import time
+from datetime import time, timedelta
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from bookings.models import Booking
 from storage.models import District, StoragePoint
 
 User = get_user_model()
@@ -104,3 +106,73 @@ class PartnerStoragePointListTests(APITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class PartnerStoragePointDeleteTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.partner = User.objects.create_user(
+            email="delete-partner@example.com", password="StorageShare2026",
+            role=User.Role.PARTNER,
+        )
+        cls.other_partner = User.objects.create_user(
+            email="delete-other@example.com", password="StorageShare2026",
+            role=User.Role.PARTNER,
+        )
+        cls.traveler = User.objects.create_user(
+            email="delete-traveler@example.com", password="StorageShare2026",
+        )
+        cls.point = PartnerStoragePointListTests.create_point(
+            cls.partner, "Deletable point", active=True,
+        )
+        cls.other_point = PartnerStoragePointListTests.create_point(
+            cls.other_partner, "Another partner point", active=True,
+        )
+
+    def url(self, point_id):
+        return reverse("partner:partner-storage-point-detail", args=[point_id])
+
+    def test_partner_can_delete_own_point_without_bookings(self):
+        self.client.force_authenticate(self.partner)
+
+        response = self.client.delete(self.url(self.point.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(StoragePoint.objects.filter(pk=self.point.pk).exists())
+
+    def test_partner_cannot_delete_another_partners_point(self):
+        self.client.force_authenticate(self.partner)
+
+        response = self.client.delete(self.url(self.other_point.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(StoragePoint.objects.filter(pk=self.other_point.pk).exists())
+
+    def test_anonymous_user_cannot_delete_a_point(self):
+        response = self.client.delete(self.url(self.point.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_without_partner_role_cannot_delete_a_point(self):
+        self.client.force_authenticate(self.traveler)
+
+        response = self.client.delete(self.url(self.point.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_point_with_booking_history_is_preserved(self):
+        start = timezone.now() + timedelta(days=2)
+        Booking.objects.create(
+            traveler=self.traveler,
+            storage_point=self.point,
+            drop_off_at=start,
+            pick_up_at=start + timedelta(hours=2),
+            bags_count=1,
+            total_price="500.00",
+        )
+        self.client.force_authenticate(self.partner)
+
+        response = self.client.delete(self.url(self.point.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertTrue(StoragePoint.objects.filter(pk=self.point.pk).exists())

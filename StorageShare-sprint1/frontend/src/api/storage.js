@@ -19,3 +19,10 @@ export function createStoragePoint(point, signal) {
 export function getMyStoragePoints(signal) {
   return api('/partner/storage-points/', { signal });
 }
+
+export function deleteMyStoragePoint(id, signal) {
+  return api(`/partner/storage-points/${encodeURIComponent(id)}/`, {
+    method: 'DELETE',
+    signal,
+  });
+}

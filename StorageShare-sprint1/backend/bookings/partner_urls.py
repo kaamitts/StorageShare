@@ -1,7 +1,7 @@
 from django.urls import path
 
 from bookings import views
-from storage.views import PartnerStoragePointListView
+from storage.views import PartnerStoragePointDetailView, PartnerStoragePointListView
 
 app_name = "partner"
 
@@ -11,5 +11,10 @@ urlpatterns = [
         "storage-points/",
         PartnerStoragePointListView.as_view(),
         name="partner-storage-points",
+    ),
+    path(
+        "storage-points/<int:pk>/",
+        PartnerStoragePointDetailView.as_view(),
+        name="partner-storage-point-detail",
     ),
 ]

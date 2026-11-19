@@ -7,6 +7,7 @@ import Header from '../components/Header';
 
 const STATUS_KEYS = {
   awaiting_payment: 'awaitingPayment',
+  expired: 'expired',
   confirmed: 'confirmed',
   checked_in: 'checkedIn',
   completed: 'completed',
@@ -36,7 +37,7 @@ export default function PartnerBookingsPage() {
           <button onClick={retry}>{t.retry}</button></div>
       : result.bookings.length === 0 ? <p className="search-empty">{t.noPartnerBookings}</p>
       : <div className="history-list">
-          {result.bookings.map(booking => <article className="booking-card" key={booking.id}>
+          {result.bookings.map(booking => <article className="booking-card partner-booking-card" key={booking.id}>
             <h2 className="booking-title">{booking.storage_point_name}</h2>
             <div className="detail-rows">
               {[[t.bookingNumber, `#${booking.id}`],

@@ -1,7 +1,10 @@
 """US-02: list storage points, filtered by district. US-07: partners add points."""
 
+from django.db import transaction
+from django.db.models.deletion import ProtectedError
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions, serializers
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -90,6 +93,35 @@ class PartnerStoragePointListView(generics.ListAPIView):
 
     def get_queryset(self):
         return StoragePoint.objects.filter(partner=self.request.user)
+
+
+class PartnerStoragePointDetailView(APIView):
+    """Delete an unbooked point owned by the authenticated partner."""
+
+    permission_classes = [permissions.IsAuthenticated, IsPartner]
+
+    @transaction.atomic
+    def delete(self, request, pk):
+        point = get_object_or_404(
+            StoragePoint.objects.select_for_update(),
+            pk=pk,
+            partner=request.user,
+        )
+        if point.bookings.exists():
+            return Response(
+                {"detail": "Storage points with bookings cannot be deleted."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        try:
+            point.delete()
+        except ProtectedError:
+            # Preserve booking history if a related record was added concurrently.
+            return Response(
+                {"detail": "Storage points with bookings cannot be deleted."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class StoragePointDetailView(generics.RetrieveAPIView):

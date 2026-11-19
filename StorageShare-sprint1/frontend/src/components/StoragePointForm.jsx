@@ -64,7 +64,7 @@ export default function StoragePointForm() {
     } finally { setLoading(false); }
   }
 
-  return <div className="booking-card">
+  return <div className="booking-card storage-point-form-card">
     <h2 className="booking-title">{t.addPoint}</h2>
     {created && <div className="banner-ok" role="status">
       {t.pointCreated}{' '}
@@ -72,7 +72,7 @@ export default function StoragePointForm() {
     </div>}
     <ErrorBanner message={message(banner)} />
     <form onSubmit={handleSubmit} noValidate>
-      <div className="form-fields">
+      <div className="form-fields storage-point-form-fields">
         <Field label={t.pointName} value={form.name}
           onChange={set('name')} error={message(errors.name)} />
         <Field label={t.address} value={form.address}

@@ -7,6 +7,7 @@ import Header from '../components/Header';
 
 const STATUS_KEYS = {
   awaiting_payment: 'awaitingPayment',
+  expired: 'expired',
   confirmed: 'confirmed',
   checked_in: 'checkedIn',
   completed: 'completed',

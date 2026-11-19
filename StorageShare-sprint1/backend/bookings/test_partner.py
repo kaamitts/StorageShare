@@ -95,6 +95,7 @@ class PartnerBookingListTests(PartnerTestData, APITestCase):
 
     def test_unpaid_bookings_are_not_returned(self):
         make_booking(self.traveler, self.point, status=BookingStatus.AWAITING_PAYMENT)
+        make_booking(self.traveler, self.point, status=BookingStatus.EXPIRED)
         paid = [
             make_booking(self.traveler, self.point, status=status).pk
             for status in (

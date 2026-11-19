@@ -77,6 +77,12 @@ still includes its stored time values, while `is_24_hours` determines display.
 The endpoint requires a partner access token. Requests without a valid token
 return `401`; authenticated users without the partner role receive `403`.
 
+### DELETE /api/partner/storage-points/<id>/
+
+Permanently deletes an unbooked point owned by the authenticated partner. Returns
+`204 No Content`. A point with booking history is preserved and returns `409`
+so booking records remain valid. A point owned by another partner returns `404`.
+
 ---
 
 ## US-08 · GET /api/partner/bookings/

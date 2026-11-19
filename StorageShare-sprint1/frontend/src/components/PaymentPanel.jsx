@@ -27,7 +27,7 @@ export default function PaymentPanel({ booking, point, onBookAnother }) {
     } finally { setLoading(false); }
   }
 
-  return <div className="booking-card">
+  return <div className="booking-card compact-booking-card">
     <h2 className="booking-title">{paid ? t.paymentDone : t.paymentTitle}</h2>
     <ErrorBanner message={banner ? t[banner] : ''} />
     <div className="detail-rows">

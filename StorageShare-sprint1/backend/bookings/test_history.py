@@ -86,12 +86,13 @@ class BookingHistoryAPITests(APITestCase):
         paid = make_booking(self.traveler, self.point)
         self.assertEqual(set(self.get_history()), {paid.pk})
 
-    def test_paid_and_finished_statuses_are_listed(self):
+    def test_finished_and_expired_statuses_remain_in_history(self):
         expected = {
             make_booking(self.traveler, self.point, status=status).pk: status
             for status in (
                 BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN,
                 BookingStatus.COMPLETED, BookingStatus.CANCELLED,
+                BookingStatus.EXPIRED,
             )
         }
         history = self.get_history()
@@ -109,7 +110,7 @@ class BookingHistoryAPITests(APITestCase):
                 self.assertTrue(qr["image"].startswith("data:image/svg+xml"))
 
     def test_completed_and_cancelled_return_no_qr(self):
-        for status in (BookingStatus.COMPLETED, BookingStatus.CANCELLED):
+        for status in (BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.EXPIRED):
             with self.subTest(status=status):
                 booking = make_booking(self.traveler, self.point, status=status)
                 item = self.get_history()[booking.pk]

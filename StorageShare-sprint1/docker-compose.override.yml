@@ -2,3 +2,6 @@ services:
   backend:
     volumes:
       - ./backend:/app
+  booking-expiry:
+    volumes:
+      - ./backend:/app

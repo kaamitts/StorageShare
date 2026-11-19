@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createBooking } from '../api/bookings';
 import { validateBooking } from '../lib/validate';
 import { formErrors } from '../lib/errors';
@@ -6,7 +7,6 @@ import { useLang } from '../lib/lang-context';
 import Field from './Field';
 import Button from './Button';
 import ErrorBanner from './ErrorBanner';
-import PaymentPanel from './PaymentPanel';
 import DateTimeField from './DateTimeField';
 import { createTimeSlots } from '../lib/time-slots';
 import { dateInTimeZone, zonedDateTimeToISOString } from '../lib/zoned-time';
@@ -31,6 +31,7 @@ function capacityLeft(message) {
 
 export default function BookingForm({ point }) {
   const { t } = useLang();
+  const navigate = useNavigate();
   const [dropOffDate, setDropOffDate] = useState('');
   const [dropOffTime, setDropOffTime] = useState('');
   const [pickUpDate, setPickUpDate] = useState('');
@@ -39,7 +40,6 @@ export default function BookingForm({ point }) {
   const [errors, setErrors] = useState({});
   const [banner, setBanner] = useState('');
   const [loading, setLoading] = useState(false);
-  const [booking, setBooking] = useState(null);
 
   const today = dateInTimeZone();
   const slots = createTimeSlots(point.opens_at, point.closes_at, {
@@ -57,11 +57,6 @@ export default function BookingForm({ point }) {
   function chooseDropOffDate(value) {
     setDropOffDate(value);
     if (!pickUpDate) setPickUpDate(value);
-  }
-
-  function reset() {
-    setBooking(null); setDropOffDate(''); setDropOffTime('');
-    setPickUpDate(''); setPickUpTime(''); setBagsCount('1');
   }
 
   const estimate = estimateTotal(
@@ -85,7 +80,7 @@ export default function BookingForm({ point }) {
         pickUpAt: zonedDateTimeToISOString(pickUpDate, pickUpTime),
         bagsCount: Number(bagsCount),
       });
-      setBooking(created);
+      navigate('/demo-payment', { state: { bookingId: created.id } });
     } catch (err) {
       const fields = formErrors(err);
       const left = capacityLeft(fields.bags_count);
@@ -97,11 +92,7 @@ export default function BookingForm({ point }) {
     } finally { setLoading(false); }
   }
 
-  if (booking) {
-    return <PaymentPanel booking={booking} point={point} onBookAnother={reset} />;
-  }
-
-  return <div className="booking-card">
+  return <div className="booking-card compact-booking-card">
     <h2 className="booking-title">{t.bookingTitle}</h2>
     <ErrorBanner message={message(banner)} />
     <form onSubmit={handleSubmit} noValidate>

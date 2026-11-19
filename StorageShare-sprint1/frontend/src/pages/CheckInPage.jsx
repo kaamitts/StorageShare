@@ -9,6 +9,7 @@ import ErrorBanner from '../components/ErrorBanner';
 
 const STATUS_KEYS = {
   awaiting_payment: 'awaitingPayment',
+  expired: 'expired',
   confirmed: 'confirmed',
   checked_in: 'checkedIn',
   completed: 'completed',
@@ -17,6 +18,7 @@ const STATUS_KEYS = {
 
 const NO_ACTION_KEYS = {
   awaiting_payment: 'bookingNotPaid',
+  expired: 'bookingExpired',
   completed: 'bookingCompleted',
   cancelled: 'bookingCancelledMsg',
 };

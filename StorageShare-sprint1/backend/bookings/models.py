@@ -1,12 +1,22 @@
 import secrets
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
+
+
+PAYMENT_RESERVATION_DURATION = timedelta(minutes=15)
+
+
+def default_payment_expires_at():
+    return timezone.now() + PAYMENT_RESERVATION_DURATION
 
 
 class BookingStatus(models.TextChoices):
     AWAITING_PAYMENT = "awaiting_payment", "Awaiting payment"
+    EXPIRED = "expired", "Expired"
     CONFIRMED = "confirmed", "Confirmed"
     CHECKED_IN = "checked_in", "Checked in"
     COMPLETED = "completed", "Completed"
@@ -50,6 +60,8 @@ class Booking(models.Model):
         default=BookingStatus.AWAITING_PAYMENT,
     )
 
+    payment_expires_at = models.DateTimeField(default=default_payment_expires_at)
+
     # Set once when the booking is created and never changed, so the QR code
     # of a booking stays the same. It is shown only while the booking is active.
     qr_token = models.CharField(
@@ -74,6 +86,10 @@ class Booking(models.Model):
             models.Index(
                 fields=["storage_point", "drop_off_at", "pick_up_at"],
                 name="booking_point_times_idx",
+            ),
+            models.Index(
+                fields=["status", "payment_expires_at"],
+                name="booking_status_expiry_idx",
             ),
         ]
 
