@@ -13,6 +13,15 @@ export async function restoreSession() {
   if (getSession()) setSession({ ...getSession(), user });
   return user;
 }
+export async function getProfile(options = {}) {
+  return api('/auth/me/', options);
+}
+export async function updateProfile(data) {
+  const profile = await api('/auth/me/', { method: 'PATCH', body: data });
+  const current = getSession();
+  if (current) setSession({ ...current, user: { ...current.user, ...profile } });
+  return profile;
+}
 export async function logout() {
   try {
     const current = getSession();

@@ -27,25 +27,25 @@ PARTNERS = [
 ]
 
 POINTS = [
-    # (partner email, name, district, address, price/bag/hour, capacity, opens, closes, notes)
+    # (partner email, name, district, address, price/bag/hour, capacity, opens, closes, notes, is_24_hours)
     ("hostel@example.com", "Almaty Hostel — reception", District.MEDEU,
      "Dostyk ave 85", "300.00", 10, time(8, 0), time(23, 0),
-     "Locked room behind the reception desk, camera."),
+     "Locked room behind the reception desk, camera.", False),
     ("cafe@example.com", "Cafe Centre — back room", District.MEDEU,
      "Abai ave 90", "250.00", 6, time(10, 0), time(22, 0),
-     "Staff-only room, door locked during service."),
+     "Staff-only room, door locked during service.", False),
     ("hotel@example.com", "Hotel Tien Shan — luggage room", District.MEDEU,
-     "Zheltoksan st 115", "400.00", 20, time(0, 0), time(23, 59),
-     "Dedicated luggage room, staffed 24/7."),
+     "Zheltoksan st 115", "400.00", 20, time(0, 0), time(0, 0),
+     "Dedicated luggage room, staffed 24/7.", True),
     ("hostel@example.com", "Almaty Hostel — basement", District.ALMALY,
-     "Tole bi st 55", "200.00", 4, time(9, 0), time(21, 0),
-     "Basement storage, padlocked cage."),
+     "Tole bi st 55", "200.00", 4, time(21, 30), time(3, 0),
+     "Basement storage, padlocked cage; night hours.", False),
     ("cafe@example.com", "Cafe Centre — Almaly", District.ALMALY,
      "Gogol st 40", "250.00", 8, time(9, 0), time(21, 0),
-     "Behind the counter, in sight of staff."),
+     "Behind the counter, in sight of staff.", False),
     ("hotel@example.com", "Hotel Tien Shan — Bostandyk", District.BOSTANDYK,
      "Satpaev st 22", "350.00", 12, time(7, 0), time(23, 0),
-     "Luggage room next to the lobby, camera."),
+     "Luggage room next to the lobby, camera.", False),
 ]
 
 
@@ -66,7 +66,10 @@ class Command(BaseCommand):
             partners[email] = partner
             self.stdout.write(f"{'created' if created else 'exists '} partner {email}")
 
-        for email, name, district, address, price, capacity, opens, closes, notes in POINTS:
+        for (
+            email, name, district, address, price, capacity, opens, closes, notes,
+            is_24_hours,
+        ) in POINTS:
             point, created = StoragePoint.objects.update_or_create(
                 name=name,
                 defaults={
@@ -77,6 +80,7 @@ class Command(BaseCommand):
                     "capacity_bags": capacity,
                     "opens_at": opens,
                     "closes_at": closes,
+                    "is_24_hours": is_24_hours,
                     "security_notes": notes,
                     "is_active": True,
                 },

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,16 +6,20 @@ from rest_framework.views import APIView
 from accounts.permissions import IsPartner, IsTraveler
 from bookings.models import Booking, BookingStatus
 from bookings.serializers import (
-    BookingHistorySerializer,
     BookingSerializer,
+    BookingHistorySerializer,
+    PendingBookingSerializer,
     PartnerBookingSerializer,
     PartnerCheckInSerializer,
 )
 from bookings.services import (
     BookingPaymentExpired,
+    booking_sequence_number,
+    cancel_pending_booking,
     check_in_booking,
     check_out_booking,
     confirm_booking_payment,
+    expire_pending_bookings,
     get_booking_for_partner,
 )
 
@@ -38,8 +43,32 @@ class BookingHistoryView(generics.ListAPIView):
             Booking.objects.filter(traveler=self.request.user)
             .exclude(status=BookingStatus.AWAITING_PAYMENT)
             .select_related("storage_point")
-            .order_by("-drop_off_at", "-id")
+            .annotate(traveler_booking_number=booking_sequence_number("traveler_id"))
+            .order_by("-created_at", "-id")
         )
+
+
+class PendingBookingView(APIView):
+    """Return the current traveler's unexpired reservation, if one exists."""
+
+    permission_classes = [permissions.IsAuthenticated, IsTraveler]
+
+    def get(self, request):
+        expire_pending_bookings()
+        booking = (
+            Booking.objects.filter(
+                traveler=request.user,
+                status=BookingStatus.AWAITING_PAYMENT,
+                payment_expires_at__gt=timezone.now(),
+            )
+            .select_related("storage_point")
+            .annotate(traveler_booking_number=booking_sequence_number("traveler_id"))
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        if booking is None:
+            return Response(None)
+        return Response(PendingBookingSerializer(booking).data)
 
 
 class BookingPayView(APIView):
@@ -58,6 +87,16 @@ class BookingPayView(APIView):
         return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
 
 
+class BookingCancelView(APIView):
+    """Cancel an unpaid booking owned by the authenticated traveler."""
+
+    permission_classes = [permissions.IsAuthenticated, IsTraveler]
+
+    def post(self, request, pk):
+        booking, _changed = cancel_pending_booking(user=request.user, booking_id=pk)
+        return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
+
+
 class PartnerBookingListView(generics.ListAPIView):
     """US-08: paid bookings of the logged-in partner's own storage points."""
 
@@ -69,7 +108,8 @@ class PartnerBookingListView(generics.ListAPIView):
         return (
             Booking.objects.filter(storage_point__partner=self.request.user)
             .exclude(status__in=(BookingStatus.AWAITING_PAYMENT, BookingStatus.EXPIRED))
-            .select_related("storage_point")
+            .select_related("storage_point", "traveler")
+            .annotate(point_booking_number=booking_sequence_number("storage_point_id"))
             .order_by("drop_off_at", "id")
         )
 

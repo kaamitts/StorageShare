@@ -43,7 +43,7 @@ export default function HistoryPage() {
             <div className="history-booking-main">
               <h2 className="booking-title">{booking.storage_point.name}</h2>
               <div className="detail-rows history-booking-details">
-                {[[t.bookingNumber, `#${booking.id}`],
+                {[[t.bookingNumber, `#${booking.traveler_booking_number}`],
                   [t.address, booking.storage_point.address],
                   [t.dropOff, formatMoment(booking.drop_off_at, lang)],
                   [t.pickUp, formatMoment(booking.pick_up_at, lang)],

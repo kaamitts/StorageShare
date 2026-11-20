@@ -1,3 +1,6 @@
+import math
+
+from django.utils import timezone
 from rest_framework import serializers
 
 from bookings.models import Booking, BookingStatus
@@ -45,12 +48,13 @@ class BookingHistorySerializer(serializers.ModelSerializer):
 
     storage_point = BookingStoragePointSerializer(read_only=True)
     qr = serializers.SerializerMethodField()
+    traveler_booking_number = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Booking
         fields = (
             "id", "storage_point", "drop_off_at", "pick_up_at", "bags_count",
-            "total_price", "status", "created_at", "qr",
+            "total_price", "status", "created_at", "qr", "traveler_booking_number",
         )
         read_only_fields = fields
 
@@ -66,19 +70,48 @@ class BookingHistorySerializer(serializers.ModelSerializer):
         }
 
 
+class PendingBookingSerializer(serializers.ModelSerializer):
+    storage_point = BookingStoragePointSerializer(read_only=True)
+    payment_seconds_remaining = serializers.SerializerMethodField()
+    traveler_booking_number = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = (
+            "id", "storage_point", "drop_off_at", "pick_up_at", "bags_count",
+            "total_price", "status", "created_at", "payment_expires_at",
+            "payment_seconds_remaining", "traveler_booking_number",
+        )
+        read_only_fields = fields
+
+    def get_payment_seconds_remaining(self, booking):
+        return max(
+            0,
+            math.ceil((booking.payment_expires_at - timezone.now()).total_seconds()),
+        )
+
+
 class PartnerBookingSerializer(serializers.ModelSerializer):
     """One booking in the partner's list (US-08)."""
 
     storage_point_id = serializers.IntegerField(read_only=True)
     storage_point_name = serializers.CharField(source="storage_point.name", read_only=True)
+    point_booking_number = serializers.IntegerField(read_only=True)
+    traveler_name = serializers.SerializerMethodField()
+    traveler_email = serializers.EmailField(source="traveler.email", read_only=True)
+    traveler_phone = serializers.CharField(source="traveler.phone", read_only=True)
 
     class Meta:
         model = Booking
         fields = (
             "id", "storage_point_id", "storage_point_name", "drop_off_at",
             "pick_up_at", "bags_count", "status", "checked_in_at", "checked_out_at",
+            "point_booking_number", "traveler_name", "traveler_email", "traveler_phone",
         )
         read_only_fields = fields
+
+    def get_traveler_name(self, booking):
+        return booking.traveler.full_name or booking.traveler.email
 
 
 class PartnerCheckInSerializer(serializers.ModelSerializer):
@@ -88,6 +121,7 @@ class PartnerCheckInSerializer(serializers.ModelSerializer):
     traveler_name = serializers.SerializerMethodField()
     can_check_in = serializers.SerializerMethodField()
     can_check_out = serializers.SerializerMethodField()
+    point_booking_number = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Booking
@@ -95,6 +129,7 @@ class PartnerCheckInSerializer(serializers.ModelSerializer):
             "id", "storage_point", "traveler_name", "drop_off_at", "pick_up_at",
             "bags_count", "total_price", "status", "checked_in_at",
             "checked_out_at", "can_check_in", "can_check_out",
+            "point_booking_number",
         )
         read_only_fields = fields
 

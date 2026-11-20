@@ -89,33 +89,30 @@ export default function StoragePointForm() {
           onChange={set('price_per_bag_per_hour')} error={message(errors.price_per_bag_per_hour)} />
         <Field label={t.capacityBags} type="number" value={form.capacity_bags}
           onChange={set('capacity_bags')} error={message(errors.capacity_bags)} />
-        <label className="hours-toggle">
+        <label className={`hours-toggle${form.is_24_hours ? ' is-active' : ''}`}>
           <input type="checkbox" checked={form.is_24_hours}
             onChange={event => setForm(current => ({
               ...current,
               is_24_hours: event.target.checked,
-              ...(event.target.checked ? { opens_at: '', closes_at: '' } : {}),
             }))} />
           <span>{t.open24Hours}</span>
         </label>
-        {!form.is_24_hours && <>
-          <div className="field">
-            <label>{t.opensAt}</label>
-            <TimePicker time={form.opens_at} onTime={set('opens_at')}
-              slots={timeOptions} ariaLabel={t.opensAt} emptyLabel={t.chooseTime}
-              hoursLabel={t.hoursLabel} minutesLabel={t.minutesLabel} quickPickLabel={t.quickPick}
-              error={Boolean(errors.opens_at)} />
-            {errors.opens_at && <span className="err-msg">{message(errors.opens_at)}</span>}
-          </div>
-          <div className="field">
-            <label>{t.closesAt}</label>
-            <TimePicker time={form.closes_at} onTime={set('closes_at')}
-              slots={timeOptions} ariaLabel={t.closesAt} emptyLabel={t.chooseTime}
-              hoursLabel={t.hoursLabel} minutesLabel={t.minutesLabel} quickPickLabel={t.quickPick}
-              error={Boolean(errors.closes_at)} />
-            {errors.closes_at && <span className="err-msg">{message(errors.closes_at)}</span>}
-          </div>
-        </>}
+        <div className={`field${form.is_24_hours ? ' field-disabled' : ''}`}>
+          <label>{t.opensAt}</label>
+          <TimePicker time={form.opens_at} onTime={set('opens_at')}
+            slots={timeOptions} ariaLabel={t.opensAt} emptyLabel={t.chooseTime}
+            hoursLabel={t.hoursLabel} minutesLabel={t.minutesLabel} quickPickLabel={t.quickPick}
+            error={Boolean(errors.opens_at)} disabled={form.is_24_hours} />
+          {errors.opens_at && <span className="err-msg">{message(errors.opens_at)}</span>}
+        </div>
+        <div className={`field${form.is_24_hours ? ' field-disabled' : ''}`}>
+          <label>{t.closesAt}</label>
+          <TimePicker time={form.closes_at} onTime={set('closes_at')}
+            slots={timeOptions} ariaLabel={t.closesAt} emptyLabel={t.chooseTime}
+            hoursLabel={t.hoursLabel} minutesLabel={t.minutesLabel} quickPickLabel={t.quickPick}
+            error={Boolean(errors.closes_at)} disabled={form.is_24_hours} />
+          {errors.closes_at && <span className="err-msg">{message(errors.closes_at)}</span>}
+        </div>
         <Field label={t.securityNotes} value={form.security_notes}
           onChange={set('security_notes')} error={message(errors.security_notes)} />
       </div>

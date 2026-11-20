@@ -80,7 +80,7 @@ export default function CheckInPage() {
       <h2 className="booking-title">{booking.storage_point.name}</h2>
       <ErrorBanner message={banner ? t[banner] : ''} />
       <div className="detail-rows">
-        {[[t.bookingNumber, `#${booking.id}`],
+        {[[t.bookingNumber, `#${booking.point_booking_number}`],
           [t.address, booking.storage_point.address],
           [t.traveler, booking.traveler_name],
           [t.dropOff, formatMoment(booking.drop_off_at, lang)],

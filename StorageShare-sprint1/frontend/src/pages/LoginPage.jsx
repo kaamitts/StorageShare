@@ -9,6 +9,7 @@ import Field from '../components/Field';
 import Button from '../components/Button';
 import ErrorBanner from '../components/ErrorBanner';
 import LangSwitcher from '../components/LangSwitcher';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -32,7 +33,8 @@ export default function LoginPage() {
     } catch (err) {
       setPassword('');
       setErrors(formErrors(err));
-      setBanner(err.status === 401 ? t.wrongCredentials : t.requestError);
+      setBanner(err.status === 404 ? t.userNotFound
+        : err.status === 401 ? t.wrongCredentials : t.requestError);
     } finally { setLoading(false); }
   }
 
@@ -41,7 +43,7 @@ export default function LoginPage() {
       <div className="auth-card">
         <div className="auth-card-top">
           <h1 className="auth-title">{t.logIn}</h1>
-          <LangSwitcher />
+          <div className="auth-preferences"><ThemeToggle className="auth-theme-button" /><LangSwitcher /></div>
         </div>
         <ErrorBanner message={banner} />
         <form onSubmit={handleSubmit} noValidate>

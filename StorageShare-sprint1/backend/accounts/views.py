@@ -10,7 +10,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.serializers import (
     LoginSerializer,
     LogoutSerializer,
+    ProfileUpdateSerializer,
     RegisterSerializer,
+    SafeTokenRefreshSerializer,
     UserSerializer,
 )
 
@@ -47,19 +49,32 @@ class LoginView(TokenObtainPairView):
 
 
 class RefreshView(TokenRefreshView):
+    serializer_class = SafeTokenRefreshSerializer
     """POST /api/auth/refresh/ — a new access token from a refresh token."""
 
     permission_classes = [permissions.AllowAny]
 
 
-class MeView(generics.RetrieveAPIView):
-    """GET /api/auth/me/ — the logged-in user, used by the frontend on reload."""
+class MeView(generics.RetrieveUpdateAPIView):
+    """GET/PATCH /api/auth/me/ — read or update the logged-in user's profile."""
 
-    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return ProfileUpdateSerializer
+        return UserSerializer
 
     def get_object(self):
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(instance).data)
 
 
 class LogoutView(APIView):

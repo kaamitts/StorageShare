@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createBooking } from '../api/bookings';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { createBooking, getPendingBooking } from '../api/bookings';
 import { validateBooking } from '../lib/validate';
 import { formErrors } from '../lib/errors';
 import { useLang } from '../lib/lang-context';
@@ -40,6 +40,17 @@ export default function BookingForm({ point }) {
   const [errors, setErrors] = useState({});
   const [banner, setBanner] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState(null);
+  const [checkingPending, setCheckingPending] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getPendingBooking(controller.signal)
+      .then(setPendingBooking)
+      .catch(error => { if (error.name !== 'AbortError') setPendingBooking(null); })
+      .finally(() => { if (!controller.signal.aborted) setCheckingPending(false); });
+    return () => controller.abort();
+  }, []);
 
   const today = dateInTimeZone();
   const slots = createTimeSlots(point.opens_at, point.closes_at, {
@@ -63,9 +74,8 @@ export default function BookingForm({ point }) {
     point.price_per_bag_per_hour, Number(bagsCount), dropOffAt, pickUpAt,
   );
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (loading) return;
+  async function submitBooking(payNow) {
+    if (loading || checkingPending || pendingBooking) return;
     const errs = validateBooking({
       dropOffAt, pickUpAt, bagsCount,
       opensAt: point.opens_at, closesAt: point.closes_at,
@@ -80,8 +90,18 @@ export default function BookingForm({ point }) {
         pickUpAt: zonedDateTimeToISOString(pickUpDate, pickUpTime),
         bagsCount: Number(bagsCount),
       });
-      navigate('/demo-payment', { state: { bookingId: created.id } });
+      if (payNow) navigate('/demo-payment', { state: { bookingId: created.id } });
+      else navigate('/pending-payment');
     } catch (err) {
+      if (err.status === 409) {
+        getPendingBooking()
+          .then(booking => {
+            setPendingBooking(booking);
+            if (!booking) setBanner('pendingBookingExists');
+          })
+          .catch(() => setBanner('pendingBookingExists'));
+        return;
+      }
       const fields = formErrors(err);
       const left = capacityLeft(fields.bags_count);
       if (left !== null) fields.bags_count = { capacity: left };
@@ -92,9 +112,18 @@ export default function BookingForm({ point }) {
     } finally { setLoading(false); }
   }
 
+  async function handleSubmit(e) {
+    e.preventDefault();
+    await submitBooking(false);
+  }
+
   return <div className="booking-card compact-booking-card">
     <h2 className="booking-title">{t.bookingTitle}</h2>
     <ErrorBanner message={message(banner)} />
+    {pendingBooking && <div className="booking-demo pending-booking-notice">
+      {t.pendingBookingExists}{' '}
+      <Link to="/pending-payment">{t.pendingPayment}</Link>
+    </div>}
     <form onSubmit={handleSubmit} noValidate>
       <div className="form-fields">
         <DateTimeField label={t.dropOff} date={dropOffDate} time={dropOffTime}
@@ -112,7 +141,12 @@ export default function BookingForm({ point }) {
         <span className="detail-label">{t.estimatedTotal}</span>
         <span className="booking-total-value">{estimate} ₸</span>
       </div>}
-      <Button loading={loading}>{t.bookBtn}</Button>
+      <div className="booking-actions">
+        <Button loading={loading} disabled={checkingPending || Boolean(pendingBooking)}>{t.bookBtn}</Button>
+        <button type="button" className="btn-primary" disabled={loading || checkingPending || Boolean(pendingBooking)}
+          onClick={() => submitBooking(true)}>{t.payNowBtn}</button>
+      </div>
+      {!pendingBooking && <p className="payment-reservation-note">{t.paymentReservationNotice}</p>}
     </form>
   </div>;
 }

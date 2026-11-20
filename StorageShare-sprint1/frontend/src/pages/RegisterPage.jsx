@@ -9,6 +9,7 @@ import Field from '../components/Field';
 import Button from '../components/Button';
 import ErrorBanner from '../components/ErrorBanner';
 import LangSwitcher from '../components/LangSwitcher';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function RegisterPage() {
       <div className="auth-card">
         <div className="auth-card-top">
           <h1 className="auth-title">{t.createAccount}</h1>
-          <LangSwitcher />
+          <div className="auth-preferences"><ThemeToggle className="auth-theme-button" /><LangSwitcher /></div>
         </div>
         <ErrorBanner message={banner} />
         <form onSubmit={handleSubmit} noValidate>
@@ -56,6 +57,7 @@ export default function RegisterPage() {
                 {['traveler', 'partner'].map(r => (
                   <button key={r} type="button"
                     className={`role-btn${role === r ? ' active' : ''}${errors.role ? ' error' : ''}`}
+                    aria-pressed={role === r}
                     onClick={() => setRole(r)}>
                     {r === 'traveler' ? t.traveler : t.partner}
                   </button>

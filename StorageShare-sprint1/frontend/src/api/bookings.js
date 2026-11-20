@@ -20,8 +20,19 @@ export function payBooking(bookingId, signal) {
   });
 }
 
+export function cancelPendingBooking(bookingId, signal) {
+  return api(`/bookings/${encodeURIComponent(bookingId)}/cancel/`, {
+    method: 'POST',
+    signal,
+  });
+}
+
 export function getBookingHistory(signal) {
   return api('/bookings/history/', { signal });
+}
+
+export function getPendingBooking(signal) {
+  return api('/bookings/pending/', { signal });
 }
 
 export function getPartnerBookings(signal) {

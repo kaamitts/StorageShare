@@ -6,8 +6,14 @@ export default function PartnerPage() {
   const { t } = useLang();
   return <div className="search-page"><Header /><main className="search-main">
     <h1 className="search-title">{t.partnerDashboard}</h1>
-    <Link className="btn-secondary" to="/partner/storage-points">{t.myStoragePoints}</Link>
-    <Link className="btn-secondary" to="/partner/bookings">{t.partnerBookings}</Link>
+    <nav className="partner-dashboard-actions" aria-label={t.partnerDashboard}>
+      <Link className="partner-dashboard-button" to="/partner/storage-points">
+        <span>{t.myStoragePoints}</span><span aria-hidden="true">→</span>
+      </Link>
+      <Link className="partner-dashboard-button" to="/partner/bookings">
+        <span>{t.partnerBookings}</span><span aria-hidden="true">→</span>
+      </Link>
+    </nav>
     <StoragePointForm />
   </main></div>;
 }

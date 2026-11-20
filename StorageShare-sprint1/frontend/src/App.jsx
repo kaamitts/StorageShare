@@ -11,14 +11,21 @@ import StorageDetailPage from './pages/StorageDetailPage';
 import HistoryPage from './pages/HistoryPage';
 import MyStoragePointsPage from './pages/MyStoragePointsPage';
 import DemoPaymentPage from './pages/DemoPaymentPage';
+import PendingPaymentPage from './pages/PendingPaymentPage';
+import ProfilePage from './pages/ProfilePage';
+import { ThemeProvider } from './lib/ThemeContext';
 export default function App() {
-  return <LangProvider><BrowserRouter><Routes>
+  return <ThemeProvider><LangProvider><BrowserRouter><Routes>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route element={<ProtectedRoute />}>
       <Route path="/search" element={<SearchPage />} />
       <Route path="/storage/:id" element={<StorageDetailPage />} />
       <Route path="/history" element={<HistoryPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route element={<ProtectedRoute role="traveler" />}>
+        <Route path="/pending-payment" element={<PendingPaymentPage />} />
+      </Route>
       <Route path="/demo-payment" element={<DemoPaymentPage />} />
     </Route>
     <Route element={<ProtectedRoute role="partner" />}>
@@ -29,5 +36,5 @@ export default function App() {
       <Route path="/checkin/:token" element={<CheckInPage />} />
     </Route>
     <Route path="*" element={<Navigate to="/search" replace />} />
-  </Routes></BrowserRouter></LangProvider>;
+  </Routes></BrowserRouter></LangProvider></ThemeProvider>;
 }

@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import (
@@ -34,10 +34,36 @@ class BookingPaymentExpired(BookingConflict):
     default_code = "booking_payment_expired"
 
 
+class PendingBookingExists(BookingConflict):
+    default_detail = "You already have a booking awaiting payment."
+    default_code = "pending_booking_exists"
+
+
+class BookingCancellationNotAllowed(BookingConflict):
+    default_detail = "Only bookings awaiting payment can be cancelled here."
+    default_code = "booking_cancellation_not_allowed"
+
+
 CAPACITY_STATUSES = (
     BookingStatus.CONFIRMED,
     BookingStatus.CHECKED_IN,
 )
+
+
+def booking_sequence_number(scope_field: str) -> Subquery:
+    """Return a stable 1-based booking number within a traveler or storage point."""
+    earlier_bookings = (
+        Booking.objects.filter(**{scope_field: OuterRef(scope_field)})
+        .filter(
+            Q(created_at__lt=OuterRef("created_at"))
+            | Q(created_at=OuterRef("created_at"), pk__lte=OuterRef("pk"))
+        )
+        .order_by()
+        .values(scope_field)
+        .annotate(sequence=Count("pk"))
+        .values("sequence")[:1]
+    )
+    return Subquery(earlier_bookings)
 
 
 def payment_deadline_passed(expires_at, *, now=None) -> bool:
@@ -158,6 +184,17 @@ def create_booking(
     if type(bags_count) is not int or not 1 <= bags_count <= 32767:
         raise ValidationError({"bags_count": "Enter a whole number from 1 to 32767."})
 
+    # Serialize booking creation per traveler, including bookings for different
+    # storage points, so concurrent requests cannot create multiple reservations.
+    User.objects.select_for_update().get(pk=traveler.pk)
+    now = timezone.now()
+    if Booking.objects.filter(
+        traveler=traveler,
+        status=BookingStatus.AWAITING_PAYMENT,
+        payment_expires_at__gt=now,
+    ).exists():
+        raise PendingBookingExists()
+
     try:
         # Lock the point, including when it has no bookings yet. Other requests
         # for this point wait until this whole transaction has finished.
@@ -252,6 +289,32 @@ def confirm_booking_payment(*, user: User, booking_id: int) -> tuple[Booking, bo
     raise AssertionError("Unexpected booking payment state.")
 
 
+def cancel_pending_booking(*, user: User, booking_id: int) -> tuple[Booking, bool]:
+    """Cancel an unpaid reservation; paid bookings need a separate refund flow."""
+    with transaction.atomic():
+        booking = (
+            Booking.objects.select_for_update()
+            .filter(pk=booking_id, traveler_id=user.pk)
+            .first()
+        )
+        if booking is None:
+            raise NotFound("Booking not found.")
+
+        if booking.status == BookingStatus.CANCELLED:
+            return booking, False
+        if booking.status == BookingStatus.EXPIRED:
+            return booking, False
+        if booking.status != BookingStatus.AWAITING_PAYMENT:
+            raise BookingCancellationNotAllowed()
+
+        if payment_deadline_passed(booking.payment_expires_at):
+            booking.status = BookingStatus.EXPIRED
+        else:
+            booking.status = BookingStatus.CANCELLED
+        booking.save(update_fields=["status", "updated_at"])
+        return booking, True
+
+
 # US-09: partner check-in and check-out by the QR token.
 
 def get_booking_for_partner(*, partner: User, token: str, lock: bool = False) -> Booking:
@@ -259,7 +322,9 @@ def get_booking_for_partner(*, partner: User, token: str, lock: bool = False) ->
 
     Unknown token -> 404. A booking of another partner's point -> 403.
     """
-    queryset = Booking.objects.select_related("storage_point", "traveler")
+    queryset = Booking.objects.select_related("storage_point", "traveler").annotate(
+        point_booking_number=booking_sequence_number("storage_point_id"),
+    )
     if lock:
         # Lock only the booking row; select_related would also lock the joined rows.
         queryset = queryset.select_for_update(of=("self",))

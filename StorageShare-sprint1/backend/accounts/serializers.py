@@ -3,8 +3,9 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import AuthenticationFailed, NotFound
+from rest_framework_simplejwt.exceptions import InvalidToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import UserRole
@@ -19,6 +20,33 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "email", "full_name", "phone", "role", "created_at")
         read_only_fields = fields
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    """Allow users to edit contact details, while keeping identity and role fixed."""
+
+    full_name = serializers.CharField(max_length=120, allow_blank=False, trim_whitespace=True)
+    phone = serializers.RegexField(
+        regex=r"^\+[1-9]\d{6,14}$",
+        max_length=16,
+        allow_blank=True,
+        required=False,
+        error_messages={"invalid": "Enter a phone number with country code and 7–15 digits."},
+    )
+
+    class Meta:
+        model = User
+        fields = ("id", "email", "full_name", "phone", "role", "created_at")
+        read_only_fields = ("id", "email", "role", "created_at")
+
+    def validate(self, attrs):
+        allowed = {"full_name", "phone"}
+        unexpected = set(self.initial_data) - allowed
+        if unexpected:
+            raise serializers.ValidationError(
+                {field: "This field cannot be changed here." for field in sorted(unexpected)}
+            )
+        return attrs
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -73,14 +101,16 @@ class LoginSerializer(TokenObtainPairSerializer):
         email = attrs.get(self.username_field, "")
         attrs[self.username_field] = email.lower()
 
+        if not User.objects.filter(email__iexact=email).exists():
+            raise NotFound("No account with this email exists.")
+
         user = authenticate(
             request=self.context.get("request"),
             username=attrs[self.username_field],
             password=attrs["password"],
         )
-        # The same message for an unknown email and for a wrong password, so
-        # the endpoint cannot be used to find out which emails are registered.
-        # `authenticate` also returns None for a disabled account.
+        # Keep a generic message for existing accounts with a wrong password
+        # or a disabled account.
         if user is None:
             raise AuthenticationFailed("Invalid email or password.")
 
@@ -90,6 +120,18 @@ class LoginSerializer(TokenObtainPairSerializer):
             "access": str(refresh.access_token),
             "user": UserSerializer(user).data,
         }
+
+
+class SafeTokenRefreshSerializer(TokenRefreshSerializer):
+    """Treat refresh tokens for deleted accounts as invalid instead of a server error."""
+
+    def validate(self, attrs):
+        try:
+            return super().validate(attrs)
+        except User.DoesNotExist as error:
+            raise InvalidToken(
+                "This refresh token belongs to an account that no longer exists."
+            ) from error
 
 
 class LogoutSerializer(serializers.Serializer):

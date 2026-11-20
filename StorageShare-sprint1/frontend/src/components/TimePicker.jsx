@@ -10,12 +10,16 @@ function pad(value) {
 
 export default function TimePicker({
   time, onTime, slots, ariaLabel, emptyLabel, hoursLabel, minutesLabel, error,
-  quickPickLabel, onOpen,
+  quickPickLabel, onOpen, disabled = false,
 }) {
   const [open, setOpen] = useState(false);
   const [hours, setHours] = useState('');
   const [minutes, setMinutes] = useState('');
   const root = useRef(null);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -68,7 +72,7 @@ export default function TimePicker({
   }
 
   return <div className="time-picker" ref={root}>
-    <button type="button" aria-label={ariaLabel} aria-expanded={open}
+    <button type="button" aria-label={ariaLabel} aria-expanded={open} disabled={disabled}
       className={`picker-control${error ? ' error' : ''}${time ? '' : ' empty'}`}
       onClick={toggle}>{time || emptyLabel}</button>
     {open && <div className="picker-pop picker-times">
