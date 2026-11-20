@@ -29,7 +29,7 @@ export default function LoginPage() {
     setErrors({}); setBanner(''); setLoading(true);
     try {
       const { user } = await login({ email: email.trim(), password });
-      navigate(from || (user.role === 'traveler' ? '/search' : '/partner'), { replace: true });
+      navigate(from || (user.is_admin ? '/admin' : user.role === 'traveler' ? '/search' : '/partner'), { replace: true });
     } catch (err) {
       setPassword('');
       setErrors(formErrors(err));

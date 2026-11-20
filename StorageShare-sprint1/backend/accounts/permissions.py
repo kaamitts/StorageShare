@@ -15,3 +15,16 @@ class IsPartner(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_partner)
+
+
+class IsSuperUser(permissions.BasePermission):
+    """Only a Django superuser may use the private management API."""
+
+    message = "Administrator access is required."
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_superuser
+        )

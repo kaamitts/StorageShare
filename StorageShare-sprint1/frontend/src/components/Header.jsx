@@ -8,6 +8,7 @@ import ThemeToggle from './ThemeToggle';
 export default function Header() {
   const { t } = useLang(); const navigate = useNavigate(); const [busy, setBusy] = useState(false);
   const role = getSession()?.user.role;
+  const isAdmin = Boolean(getSession()?.user.is_admin);
   const canOpenProfile = role === 'traveler' || role === 'partner';
   async function signOut() {
     setBusy(true);
@@ -27,7 +28,9 @@ export default function Header() {
         <NavLink className={({ isActive }) => `header-nav-link${isActive ? ' active' : ''}`}
           to="/history">{t.history}</NavLink>
       </>}
-      {role === 'partner' && <NavLink className={({ isActive }) => `header-nav-link${isActive ? ' active' : ''}`}
+      {isAdmin && <NavLink className={({ isActive }) => `header-nav-link${isActive ? ' active' : ''}`}
+        to="/admin">{t.adminPanel}</NavLink>}
+      {role === 'partner' && !isAdmin && <NavLink className={({ isActive }) => `header-nav-link${isActive ? ' active' : ''}`}
         to="/partner">{t.partner}</NavLink>}
       <LangSwitcher /><button onClick={signOut} disabled={busy}>{t.logout}</button>
       <ThemeToggle />

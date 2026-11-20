@@ -13,6 +13,7 @@ import MyStoragePointsPage from './pages/MyStoragePointsPage';
 import DemoPaymentPage from './pages/DemoPaymentPage';
 import PendingPaymentPage from './pages/PendingPaymentPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
 import { ThemeProvider } from './lib/ThemeContext';
 export default function App() {
   return <ThemeProvider><LangProvider><BrowserRouter><Routes>
@@ -23,6 +24,9 @@ export default function App() {
       <Route path="/storage/:id" element={<StorageDetailPage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route element={<ProtectedRoute admin />}>
+        <Route path="/admin" element={<AdminPage />} />
+      </Route>
       <Route element={<ProtectedRoute role="traveler" />}>
         <Route path="/pending-payment" element={<PendingPaymentPage />} />
       </Route>

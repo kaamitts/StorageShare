@@ -315,6 +315,36 @@ def cancel_pending_booking(*, user: User, booking_id: int) -> tuple[Booking, boo
         return booking, True
 
 
+@transaction.atomic
+def admin_cancel_booking(*, booking_id: int) -> tuple[Booking, bool]:
+    """Cancel a future or unpaid booking from the administrator panel.
+
+    Checked-in and completed bookings cannot be cancelled because the bags may
+    already be physically with the partner or returned to the traveler.
+    """
+    booking = Booking.objects.select_for_update().filter(pk=booking_id).first()
+    if booking is None:
+        raise NotFound("Booking not found.")
+
+    if booking.status in (BookingStatus.CANCELLED, BookingStatus.EXPIRED):
+        return booking, False
+    if booking.status == BookingStatus.AWAITING_PAYMENT:
+        booking.status = (
+            BookingStatus.EXPIRED
+            if payment_deadline_passed(booking.payment_expires_at)
+            else BookingStatus.CANCELLED
+        )
+    elif booking.status == BookingStatus.CONFIRMED:
+        booking.status = BookingStatus.CANCELLED
+    else:
+        raise BookingConflict(
+            "A booking cannot be cancelled after check-in or completion."
+        )
+
+    booking.save(update_fields=["status", "updated_at"])
+    return booking, True
+
+
 # US-09: partner check-in and check-out by the QR token.
 
 def get_booking_for_partner(*, partner: User, token: str, lock: bool = False) -> Booking:

@@ -18,8 +18,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "email", "full_name", "phone", "role", "created_at")
+        fields = ("id", "email", "full_name", "phone", "role", "created_at", "is_admin")
         read_only_fields = fields
+
+    is_admin = serializers.BooleanField(source="is_superuser", read_only=True)
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
@@ -95,6 +97,7 @@ class LoginSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token["role"] = user.role
         token["email"] = user.email
+        token["is_admin"] = user.is_superuser
         return token
 
     def validate(self, attrs):

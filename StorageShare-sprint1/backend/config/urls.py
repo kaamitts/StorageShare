@@ -9,4 +9,5 @@ urlpatterns = [
     path("api/", include("storage.urls")),
     path("api/bookings/", include("bookings.urls")),
     path("api/partner/", include("bookings.partner_urls")),
+    path("api/admin-panel/", include("control_panel.urls")),
 ]
