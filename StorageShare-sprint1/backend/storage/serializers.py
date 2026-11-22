@@ -1,6 +1,7 @@
 """Serializers for the storage point list (US-02 result cards)."""
 
 from datetime import time
+from decimal import Decimal
 
 from rest_framework import serializers
 
@@ -19,7 +20,10 @@ class StoragePointCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StoragePoint
-        fields = ("id", "name", "district", "district_code", "price_per_bag_per_hour")
+        fields = (
+            "id", "name", "district", "district_code", "price_per_bag_per_hour",
+            "latitude", "longitude",
+        )
         read_only_fields = fields
 
 
@@ -40,6 +44,8 @@ class StoragePointDetailSerializer(serializers.ModelSerializer):
             "district",
             "district_code",
             "address",
+            "latitude",
+            "longitude",
             "opens_at",
             "closes_at",
             "is_24_hours",
@@ -60,7 +66,7 @@ class PartnerStoragePointSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoragePoint
         fields = (
-            "id", "name", "address", "district", "district_code",
+            "id", "name", "address", "latitude", "longitude", "district", "district_code",
             "price_per_bag_per_hour", "capacity_bags", "opens_at", "closes_at",
             "is_24_hours", "is_active",
         )
@@ -91,6 +97,14 @@ class StoragePointCreateSerializer(serializers.ModelSerializer):
         max_digits=8, decimal_places=2, min_value=0,
     )
     capacity_bags = serializers.IntegerField(min_value=1, max_value=32767)
+    latitude = serializers.DecimalField(
+        max_digits=9, decimal_places=6, min_value=Decimal("-90"),
+        max_value=Decimal("90"), required=False, allow_null=True,
+    )
+    longitude = serializers.DecimalField(
+        max_digits=9, decimal_places=6, min_value=Decimal("-180"),
+        max_value=Decimal("180"), required=False, allow_null=True,
+    )
     closes_at = serializers.TimeField(required=False, allow_null=True)
     opens_at = serializers.TimeField(required=False, allow_null=True)
     is_24_hours = serializers.BooleanField(default=False)
@@ -105,6 +119,8 @@ class StoragePointCreateSerializer(serializers.ModelSerializer):
             "partner",
             "name",
             "address",
+            "latitude",
+            "longitude",
             "district",
             "price_per_bag_per_hour",
             "capacity_bags",
@@ -118,6 +134,12 @@ class StoragePointCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "partner", "is_active", "created_at")
 
     def validate(self, attrs):
+        if (attrs.get("latitude") is None) != (attrs.get("longitude") is None):
+            raise serializers.ValidationError({
+                "latitude": ["Latitude and longitude must be provided together."],
+                "longitude": ["Latitude and longitude must be provided together."],
+            })
+
         if attrs["is_24_hours"]:
             # Keep the existing non-null time columns and use their established
             # equal-times convention for compatibility with older records.

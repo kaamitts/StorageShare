@@ -8,8 +8,8 @@ from django.utils.translation import gettext_lazy as _
 class District(models.TextChoices):
     """The districts of Almaty, as a fixed list.
 
-    The MVP has no map and no address search: a traveler picks a district and
-    sees the cards of that district, so the list has to be closed and stable.
+    Districts remain a fixed filter list; optional coordinates support map
+    selection and display while older points can remain without a pin.
     """
 
     ALATAU = "alatau", "Alatau"
@@ -42,6 +42,12 @@ class StoragePoint(models.Model):
     )
     name = models.CharField(_("name"), max_length=120)
     address = models.CharField(_("address"), max_length=255)
+    latitude = models.DecimalField(
+        _("latitude"), max_digits=9, decimal_places=6, null=True, blank=True,
+    )
+    longitude = models.DecimalField(
+        _("longitude"), max_digits=9, decimal_places=6, null=True, blank=True,
+    )
     district = models.CharField(
         _("district"),
         max_length=32,

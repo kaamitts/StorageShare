@@ -73,7 +73,10 @@ class StoragePointListTests(APITestCase):
         card = self.client.get(self.url, {"district": "almaly"}).data[0]
         self.assertEqual(
             set(card),
-            {"id", "name", "district", "district_code", "price_per_bag_per_hour"},
+            {
+                "id", "name", "district", "district_code", "price_per_bag_per_hour",
+                "latitude", "longitude",
+            },
         )
         self.assertEqual(card["name"], "Almaly Hostel")
         self.assertEqual(card["district"], "Almaly")
@@ -163,7 +166,7 @@ class StoragePointDetailTests(APITestCase):
         self.assertEqual(
             set(response.data),
             {
-                "id", "name", "district", "district_code", "address",
+                "id", "name", "district", "district_code", "address", "latitude", "longitude",
                 "opens_at", "closes_at", "is_24_hours", "security_notes",
                 "price_per_bag_per_hour",
             },

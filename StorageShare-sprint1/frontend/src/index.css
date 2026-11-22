@@ -1630,3 +1630,41 @@ html[data-theme="dark"] .admin-action-button.danger:hover:not(:disabled) { backg
 html[data-theme="dark"] .admin-notice.success { background: #253a2b; border-color: #3c6347; color: #b5e3c1; }
 html[data-theme="dark"] .admin-notice.error { background: #3a2929; border-color: #614040; color: #ffc3c3; }
 html[data-theme="dark"] .admin-empty { color: #b9c0c4; }
+
+.storage-view-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.storage-view-toggle { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid #e5e5e3; border-radius: 11px; background: #fff; }
+.storage-view-toggle button, .locate-me-button, .card-map-button {
+  min-height: 38px; padding: 0 13px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: #303030; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.storage-view-toggle button.active { background: #111; color: #fff; }
+.locate-me-button, .card-map-button { border-color: #deded9; background: #fff; }
+.locate-me-button:hover, .card-map-button:hover { background: #f5f4f0; }
+.storage-map { width: 100%; height: 430px; border: 1px solid #e5e5e3; border-radius: 14px; z-index: 0; }
+.search-map-layout { position: relative; min-width: 0; }
+.map-empty-hint { margin-top: 10px; color: #777; }
+.map-location-error { margin: 0; color: #9b3434; font-size: 13px; }
+.storage-card-link { display: flex; flex: 1; flex-direction: column; gap: 8px; color: inherit; text-decoration: none; }
+.card-map-button { align-self: flex-start; margin-top: 8px; }
+.card-distance { margin-top: 2px; color: #386a45; font-size: 13px; font-weight: 600; }
+.map-picker-field { grid-column: 1 / -1; }
+.address-map-search-row { display: flex; align-items: stretch; gap: 8px; }
+.address-map-search-row input { min-width: 0; flex: 1; }
+.address-map-search-row .btn-secondary { flex: 0 0 auto; white-space: nowrap; }
+.map-picker-hint, .map-coordinates { margin: 0; color: #777; font-size: 13px; }
+.map-picker-field .storage-map { height: 300px; margin: 4px 0; }
+html[data-theme="dark"] .storage-view-toggle { border-color: #454c51; background: #222629; }
+html[data-theme="dark"] .storage-view-toggle button { color: #d1d6d9; }
+html[data-theme="dark"] .storage-view-toggle button.active { background: #4b8df8; color: #fff; }
+html[data-theme="dark"] .locate-me-button, html[data-theme="dark"] .card-map-button { border-color: #454c51; background: #2b3034; color: #edf0f2; }
+html[data-theme="dark"] .locate-me-button:hover, html[data-theme="dark"] .card-map-button:hover { background: #353c41; }
+html[data-theme="dark"] .map-picker-hint, html[data-theme="dark"] .map-coordinates, html[data-theme="dark"] .map-empty-hint { color: #aeb4b8; }
+html[data-theme="dark"] .card-distance { color: #aee4bd; }
+@media (max-width: 600px) {
+  .storage-map { height: 56vh; min-height: 320px; }
+  .map-picker-field .storage-map { height: 42vh; min-height: 260px; }
+  .address-map-search-row { flex-direction: column; }
+  .storage-view-controls { align-items: stretch; }
+  .storage-view-toggle { flex: 1; }
+  .storage-view-toggle button { flex: 1; }
+}

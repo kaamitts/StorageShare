@@ -1,5 +1,7 @@
 FROM node:24-alpine AS build
 WORKDIR /app
+ARG VITE_MAPTILER_API_KEY=
+ENV VITE_MAPTILER_API_KEY=$VITE_MAPTILER_API_KEY
 COPY package*.json ./
 RUN npm ci
 COPY . .

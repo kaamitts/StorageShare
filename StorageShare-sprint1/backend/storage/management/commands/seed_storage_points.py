@@ -48,6 +48,17 @@ POINTS = [
      "Luggage room next to the lobby, camera.", False),
 ]
 
+# Coordinates for the six fixed demo addresses in Almaty, keyed by their
+# stable ASCII address so names remain independent of translation/encoding.
+DEMO_COORDINATES = {
+    "Dostyk ave 85": ("43.255803", "76.955293"),
+    "Abai ave 90": ("43.238267", "76.897971"),
+    "Zheltoksan st 115": ("43.253082", "76.939583"),
+    "Tole bi st 55": ("43.255464", "76.945639"),
+    "Gogol st 40": ("43.259698", "76.954310"),
+    "Satpaev st 22": ("43.236718", "76.928949"),
+}
+
 
 class Command(BaseCommand):
     help = "Create demo partners and six storage points in three districts."
@@ -76,6 +87,8 @@ class Command(BaseCommand):
                     "partner": partners[email],
                     "district": district,
                     "address": address,
+                    "latitude": DEMO_COORDINATES[address][0],
+                    "longitude": DEMO_COORDINATES[address][1],
                     "price_per_bag_per_hour": Decimal(price),
                     "capacity_bags": capacity,
                     "opens_at": opens,

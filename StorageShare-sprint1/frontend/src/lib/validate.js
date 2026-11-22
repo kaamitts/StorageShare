@@ -63,6 +63,7 @@ export function validateStoragePoint(form) {
   if (!form.name.trim()) errors.name = 'pointNameRequired';
   if (!form.address.trim()) errors.address = 'addressRequired';
   if (!form.district) errors.district = 'districtRequired';
+    if (!form.latitude || !form.longitude) errors.latitude = 'locationRequired';
 
   const price = Number(form.price_per_bag_per_hour);
   if (form.price_per_bag_per_hour === '' || !Number.isFinite(price) || price < 0) {

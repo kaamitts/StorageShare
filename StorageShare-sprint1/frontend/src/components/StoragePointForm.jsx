@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getDistricts, createStoragePoint } from '../api/storage';
 import { validateStoragePoint } from '../lib/validate';
@@ -11,10 +11,13 @@ import ErrorBanner from './ErrorBanner';
 import Dropdown from './Dropdown';
 import TimePicker from './TimePicker';
 import { createTimeSlots } from '../lib/time-slots';
+import { findAddress, findAddressAt } from '../lib/geocoding';
+const StorageMap = lazy(() => import('./StorageMap'));
 
 const EMPTY = {
   name: '', address: '', district: '', price_per_bag_per_hour: '',
   capacity_bags: '', opens_at: '', closes_at: '', is_24_hours: false,
+  latitude: '', longitude: '',
   security_notes: '',
 };
 
@@ -26,6 +29,8 @@ export default function StoragePointForm() {
   const [banner, setBanner] = useState('');
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(null);
+  const [addressLookup, setAddressLookup] = useState(false);
+  const [mapMessage, setMapMessage] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -37,6 +42,36 @@ export default function StoragePointForm() {
   function set(key) { return value => setForm(current => ({ ...current, [key]: value })); }
 
   function message(value) { return value ? t[value] || value : undefined; }
+
+  async function searchAddress() {
+    if (!form.address.trim() || addressLookup) return;
+    setAddressLookup(true);
+    setMapMessage('');
+    try {
+      const result = await findAddress(form.address.trim(), lang);
+      setForm(current => ({
+        ...current,
+        address: result.address.slice(0, 255),
+        latitude: result.latitude.toFixed(6),
+        longitude: result.longitude.toFixed(6),
+      }));
+    } catch (error) {
+      setMapMessage(error.message || 'mapLookupFailed');
+    } finally { setAddressLookup(false); }
+  }
+
+  async function pickMapLocation({ lat, lng }) {
+    setForm(current => ({
+      ...current, address: '', latitude: lat.toFixed(6), longitude: lng.toFixed(6),
+    }));
+    setMapMessage('');
+    try {
+      const address = await findAddressAt(lat, lng, lang);
+      if (address) setForm(current => ({ ...current, address: address.slice(0, 255) }));
+    } catch (error) {
+      setMapMessage(error.message || 'mapLookupFailed');
+    }
+  }
 
   const timeOptions = createTimeSlots('00:00', '23:30');
 
@@ -51,6 +86,8 @@ export default function StoragePointForm() {
       const point = await createStoragePoint({
         ...pointData,
         ...(form.is_24_hours ? {} : { opens_at, closes_at }),
+        latitude: Number(form.latitude),
+        longitude: Number(form.longitude),
         capacity_bags: Number(form.capacity_bags),
         security_notes: form.security_notes.trim(),
       });
@@ -75,8 +112,42 @@ export default function StoragePointForm() {
       <div className="form-fields storage-point-form-fields">
         <Field label={t.pointName} value={form.name}
           onChange={set('name')} error={message(errors.name)} />
-        <Field label={t.address} value={form.address}
-          onChange={set('address')} error={message(errors.address)} />
+        <div className="field address-map-search">
+          <label htmlFor="storage-point-address">{t.address}</label>
+          <div className="address-map-search-row">
+            <input id="storage-point-address" type="text" maxLength={255}
+              value={form.address} className={errors.address ? 'error' : ''}
+              onChange={event => setForm(current => ({
+                ...current, address: event.target.value,
+              }))}
+              onKeyDown={event => {
+                if (event.key === 'Enter') { event.preventDefault(); searchAddress(); }
+              }}
+              aria-invalid={Boolean(errors.address)} />
+            <button className="btn-secondary" type="button"
+              disabled={!form.address.trim() || addressLookup} onClick={searchAddress}>
+              {addressLookup ? t.searchingAddress : t.findOnMap}
+            </button>
+          </div>
+          {errors.address && <span className="err-msg">{message(errors.address)}</span>}
+        </div>
+        <div className="field map-picker-field">
+          <label>{t.pointLocation}</label>
+          <p className="map-picker-hint">{t.mapPickHint}</p>
+          <Suspense fallback={<p>{t.loading}</p>}><StorageMap
+            points={[]}
+            lang={lang}
+            selectedPosition={form.latitude && form.longitude
+              ? [Number(form.latitude), Number(form.longitude)] : null}
+            onPick={pickMapLocation}
+          /></Suspense>
+          <p className="map-coordinates">
+            {form.latitude && form.longitude
+              ? `${t.coordinates}: ${form.latitude}, ${form.longitude}` : t.locationNotSelected}
+          </p>
+          {mapMessage && <span className="err-msg">{message(mapMessage)}</span>}
+          {errors.latitude && <span className="err-msg">{message(errors.latitude)}</span>}
+        </div>
         <div className="field">
           <label>{t.district}</label>
           <Dropdown wide ariaLabel={t.district} value={form.district}
