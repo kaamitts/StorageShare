@@ -45,9 +45,9 @@ export default function StoragePointForm() {
   useEffect(() => {
     if (skipSuggest.current) { skipSuggest.current = false; return undefined; }
     const query = form.address.trim();
-    if (query.length < 3) { setSuggestions([]); return undefined; }
     const controller = new AbortController();
     const timer = setTimeout(() => {
+      if (query.length < 3) { setSuggestions([]); return; }
       suggestAddresses(query, lang, controller.signal)
         .then(setSuggestions)
         .catch(error => { if (error.name !== 'AbortError') setSuggestions([]); });
