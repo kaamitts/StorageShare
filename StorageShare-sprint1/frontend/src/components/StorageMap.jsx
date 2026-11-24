@@ -32,7 +32,7 @@ function MapBaseLayer({ lang }) {
     import('@maptiler/leaflet-maptilersdk').then(({ Language, MapStyle, MaptilerLayer }) => {
       if (disposed) return;
       const language = lang === 'kk' ? Language.KAZAKH : lang === 'ru' ? Language.RUSSIAN : Language.ENGLISH;
-      layer = new MaptilerLayer({ apiKey, style: MapStyle.STREETS, language });
+      layer = new MaptilerLayer({ apiKey, style: MapStyle.STREETS_V4, language });
       layer.addTo(map);
     });
     return () => { disposed = true; layer?.remove(); };
@@ -80,7 +80,10 @@ export default function StorageMap({
       <Marker key={point.id} position={[Number(point.latitude), Number(point.longitude)]}>
         <Popup>{point.popupContent || point.name}</Popup>
       </Marker>)}
-    {selectedPosition && <Marker position={selectedPosition} />}
+    {selectedPosition && <Marker position={selectedPosition}
+      draggable={Boolean(onPick)}
+      eventHandlers={onPick
+        ? { dragend: event => onPick(event.target.getLatLng()) } : undefined} />}
     {userPosition && <CircleMarker center={userPosition} radius={8} pathOptions={{ color: '#2563eb', fillOpacity: 0.8 }}>
       <Popup>{locationLabel}</Popup>
     </CircleMarker>}

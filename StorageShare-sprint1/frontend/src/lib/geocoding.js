@@ -4,30 +4,51 @@ function languageCode(lang) {
   return lang === 'kk' ? 'kk' : lang === 'ru' ? 'ru' : 'en';
 }
 
-async function readFeature(url) {
+async function readFeatures(url, signal) {
   if (!API_KEY) throw new Error('mapApiKeyMissing');
-  const response = await fetch(url);
+  const response = await fetch(url, { signal });
   if (!response.ok) throw new Error('mapLookupFailed');
   const data = await response.json();
-  const feature = data.features?.[0];
-  if (!feature) throw new Error('mapAddressNotFound');
-  return feature;
+  return data.features || [];
 }
 
-export async function findAddress(address, lang) {
-  const query = new URLSearchParams({ key: API_KEY || '', language: languageCode(lang), country: 'KZ', limit: '1' });
-  const feature = await readFeature(
-    `https://api.maptiler.com/geocoding/${encodeURIComponent(address)}.json?${query}`,
-  );
+function toPlace(feature) {
   const [longitude, latitude] = feature.center || feature.geometry?.coordinates || [];
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) throw new Error('mapLookupFailed');
-  return { latitude, longitude, address: feature.place_name || address };
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { latitude, longitude, address: feature.place_name || feature.text || '' };
 }
 
-export async function findAddressAt(latitude, longitude, lang) {
-  const query = new URLSearchParams({ key: API_KEY || '', language: languageCode(lang), limit: '1' });
-  const feature = await readFeature(
-    `https://api.maptiler.com/geocoding/${longitude},${latitude}.json?${query}`,
+export async function suggestAddresses(address, lang, signal) {
+  const query = new URLSearchParams({
+    key: API_KEY || '',
+    language: languageCode(lang),
+    country: 'kz',
+    autocomplete: 'true',
+    limit: '5',
+  });
+  const features = await readFeatures(
+    `https://api.maptiler.com/geocoding/${encodeURIComponent(address)}.json?${query}`,
+    signal,
   );
-  return feature.place_name || feature.text || '';
+  return features.map(toPlace).filter(Boolean);
+}
+
+export async function findAddress(address, lang, signal) {
+  const [first] = await suggestAddresses(address, lang, signal);
+  if (!first) throw new Error('mapAddressNotFound');
+  return { ...first, address: first.address || address };
+}
+
+export async function findAddressAt(latitude, longitude, lang, signal) {
+  const query = new URLSearchParams({
+    key: API_KEY || '',
+    language: languageCode(lang),
+    limit: '1',
+  });
+  const [first] = await readFeatures(
+    `https://api.maptiler.com/geocoding/${longitude},${latitude}.json?${query}`,
+    signal,
+  );
+  if (!first) throw new Error('mapAddressNotFound');
+  return first.place_name || first.text || '';
 }

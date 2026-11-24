@@ -1650,7 +1650,42 @@ html[data-theme="dark"] .admin-empty { color: #b9c0c4; }
 .map-picker-field { grid-column: 1 / -1; }
 .address-map-search-row { display: flex; align-items: stretch; gap: 8px; }
 .address-map-search-row input { min-width: 0; flex: 1; }
-.address-map-search-row .btn-secondary { flex: 0 0 auto; white-space: nowrap; }
+.address-map-search-row .btn-secondary { flex: 0 0 auto; width: auto; white-space: nowrap; }
+.address-map-search { grid-column: 1 / -1; position: relative; }
+.address-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 8px;
+  background: #fff;
+  border: 1.5px solid #e5e5e3;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.address-suggestion {
+  padding: 10px 12px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: #111;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.address-suggestion:hover { background: #f0f0ee; }
+html[data-theme="dark"] .address-suggestions { background: #1f2426; border-color: #2f3639; }
+html[data-theme="dark"] .address-suggestion { color: #e8edef; }
+html[data-theme="dark"] .address-suggestion:hover { background: #2a3134; }
 .map-picker-hint, .map-coordinates { margin: 0; color: #777; font-size: 13px; }
 .map-picker-field .storage-map { height: 300px; margin: 4px 0; }
 html[data-theme="dark"] .storage-view-toggle { border-color: #454c51; background: #222629; }
