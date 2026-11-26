@@ -372,7 +372,7 @@ export const translations = {
     deletePoint: 'Удалить',
     deletingPoint: 'Удаление…',
     confirmDeletePoint: 'Удалить эту точку хранения? Если у неё есть бронирования, удалить её не получится.',
-    pointHasBookings: 'У этой точки есть бронирования. Удалить её, чтобы сохранить историю.',
+    pointHasBookings: 'У этой точки есть бронирования, поэтому её нельзя удалить: так сохраняется история',
     pointActive: 'Активна',
     pointInactive: 'Неактивна',
     workingHours: 'Режим работы',
