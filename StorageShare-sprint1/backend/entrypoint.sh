@@ -5,6 +5,11 @@ if [ "${SEED_DEMO_DATA:-0}" = "1" ]; then
     python manage.py seed_storage_points
 fi
 
+python manage.py migrate --noinput
+if [ -n "${DJANGO_SUPERUSER_EMAIL:-}" ] && [ -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]; then
+    python manage.py createsuperuser --noinput || true
+fi
+
 # DEBUG=1 is local Docker Compose (code mounted, autoreload).
 # Anything else (Render, etc.) runs gunicorn on the port the host provides.
 if [ "${DEBUG:-0}" = "1" ]; then
