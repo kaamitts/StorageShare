@@ -23,7 +23,12 @@ from storage.models import District, StoragePoint
 class BookingConcurrencyTests(TransactionTestCase):
     def setUp(self):
         user_model = get_user_model()
-        self.traveler = user_model.objects.create_user(email="race-traveler@example.com")
+        # One traveler per request: a traveler may hold only one unpaid booking,
+        # so these tests compete for the point's capacity, not for that rule.
+        self.travelers = [
+            user_model.objects.create_user(email=f"race-traveler-{i}@example.com")
+            for i in range(2)
+        ]
         partner = user_model.objects.create_user(email="race-partner@example.com", role="partner")
         self.point = StoragePoint.objects.create(
             partner=partner, name="Last space", address="Test address",
@@ -44,14 +49,14 @@ class BookingConcurrencyTests(TransactionTestCase):
         barrier = Barrier(3)
         worker_pids = Queue()
 
-        def request():
+        def request(traveler):
             try:
                 with connections["default"].cursor() as cursor:
                     cursor.execute("SET lock_timeout = '15s'")
                     cursor.execute("SELECT pg_backend_pid()")
                     worker_pids.put(cursor.fetchone()[0])
                 client = APIClient()
-                client.force_authenticate(self.traveler)
+                client.force_authenticate(traveler)
                 barrier.wait(timeout=10)
                 response = client.post(self.url, self.payload, format="json")
                 return response.status_code, response.data
@@ -63,7 +68,7 @@ class BookingConcurrencyTests(TransactionTestCase):
             # before checking capacity. This also covers an empty booking table.
             with transaction.atomic():
                 StoragePoint.objects.select_for_update().get(pk=self.point.pk)
-                futures = [pool.submit(request), pool.submit(request)]
+                futures = [pool.submit(request, traveler) for traveler in self.travelers]
                 pids = [worker_pids.get(timeout=10), worker_pids.get(timeout=10)]
                 barrier.wait(timeout=10)
                 deadline = monotonic() + 5

@@ -57,6 +57,10 @@ class BookingAPITests(APITestCase):
         data.update(overrides)
         return Booking.objects.create(**data)
 
+    def clear_traveler_bookings(self):
+        """A traveler may hold one unpaid booking; free the slot between requests."""
+        Booking.objects.filter(traveler=self.traveler).delete()
+
     def assert_rejected(self, payload, field, expected_status=400):
         before = Booking.objects.count()
         response = self.client.post(self.url, payload, format="json")
@@ -261,6 +265,7 @@ class BookingAPITests(APITestCase):
             pick_up_at=self.start.replace(hour=23).isoformat(),
         ), format="json")
         self.assertEqual(response.status_code, 201, response.data)
+        self.clear_traveler_bookings()
         self.assert_rejected(self.payload(
             drop_off_at=self.start.replace(hour=23).isoformat(),
             pick_up_at=(self.start + timedelta(days=1)).isoformat(),
@@ -275,6 +280,7 @@ class BookingAPITests(APITestCase):
             pick_up_at=(self.start + timedelta(days=1)).replace(hour=6).isoformat(),
         ), format="json")
         self.assertEqual(response.status_code, 201, response.data)
+        self.clear_traveler_bookings()
         self.assert_rejected(self.payload(), "drop_off_at")
 
     def test_overnight_schedule_accepts_times_on_both_sides_of_midnight(self):
@@ -286,6 +292,7 @@ class BookingAPITests(APITestCase):
             pick_up_at=(self.start + timedelta(days=1)).replace(hour=1).isoformat(),
         ), format="json")
         self.assertEqual(response.status_code, 201, response.data)
+        self.clear_traveler_bookings()
         self.assert_rejected(self.payload(
             drop_off_at=self.start.replace(hour=3).isoformat(),
             pick_up_at=self.start.replace(hour=4).isoformat(),

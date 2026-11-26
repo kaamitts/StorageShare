@@ -130,12 +130,12 @@ class LoginTests(APITestCase):
         self.assertEqual(str(response.data["detail"]), "Invalid email or password.")
         self.assertNotIn("access", response.data)
 
-    def test_unknown_email_gets_the_same_message(self):
+    def test_unknown_email_returns_not_found(self):
         response = self.client.post(
             self.url, {"email": "nobody@example.com", "password": PASSWORD}, format="json"
         )
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(str(response.data["detail"]), "Invalid email or password.")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(str(response.data["detail"]), "No account with this email exists.")
 
     def test_disabled_account_cannot_log_in(self):
         self.user.is_active = False
